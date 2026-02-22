@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -870,6 +871,13 @@ export default function App() {
                       <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
                     </div>
                   </div>
+                  <div className="col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Alokasi Waktu per Pertemuan</label>
+                    <div className="relative">
+                      <input type="text" name="duration" value={state.formData.duration} onChange={handleInputChange} placeholder="contoh: 2 x 35 menit" className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 outline-none pl-10"/>
+                      <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -1042,6 +1050,7 @@ export default function App() {
                             state.formData.material
                           )}
                         </td></tr>
+                        <tr><td className="col-key">Alokasi Waktu</td><td className="font-bold">{state.formData.duration} / Pertemuan</td></tr>
                         <tr><td className="col-key">Tahun Pelajaran</td><td>{state.formData.academicYear}</td></tr>
                       </tbody>
                     </table>
@@ -1249,3 +1258,4 @@ export default function App() {
     </div>
   );
 }
+
