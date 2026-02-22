@@ -80,13 +80,24 @@ const SD_GRADES = [
 ];
 
 const MEETING_THEMES = [
-  { header: "#e3f2fd", accent: "#1565c0", text: "#0d47a1" }, // Blue
-  { header: "#e8f5e9", accent: "#2e7d32", text: "#1b5e20" }, // Green
-  { header: "#fff3e0", accent: "#ef6c00", text: "#e65100" }, // Orange
-  { header: "#f3e5f5", accent: "#7b1fa2", text: "#4a148c" }, // Purple
-  { header: "#fce4ec", accent: "#c2185b", text: "#880e4f" }, // Pink
-  { header: "#e0f2f1", accent: "#00796b", text: "#004d40" }, // Teal
+  { header: "#e3f2fd", accent: "#1565c0", text: "#0d47a1", name: "Biru" },
+  { header: "#e8f5e9", accent: "#2e7d32", text: "#1b5e20", name: "Hijau" },
+  { header: "#fff3e0", accent: "#ef6c00", text: "#e65100", name: "Oranye" },
+  { header: "#f3e5f5", accent: "#7b1fa2", text: "#4a148c", name: "Ungu" },
+  { header: "#fce4ec", accent: "#c2185b", text: "#880e4f", name: "Merah Muda" },
+  { header: "#e0f2f1", accent: "#00796b", text: "#004d40", name: "Toska" },
 ];
+
+const SUBJECT_THEME_MAP: Record<string, number> = {
+  "Bahasa Indonesia": 4, // Pink
+  "Matematika": 0, // Blue
+  "Ilmu Pengetahuan Alam dan Sosial (IPAS)": 1, // Green
+  "Pendidikan Pancasila": 2, // Orange
+  "Seni Rupa": 3, // Purple
+  "Seni Musik": 5, // Teal
+  "Bahasa Inggris": 0, // Blue
+  "PJOK": 1, // Green
+};
 
 const SEMESTER_2_MONTHS = [
   { name: "Januari", code: "Jan" },
@@ -119,6 +130,359 @@ const INITIAL_FORM: RPMFormData = {
 
 declare const html2pdf: any;
 
+// --- REUSABLE RPM DOCUMENT COMPONENT ---
+const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeIndex?: number, id?: string }) => {
+  const { formData, generatedContent, generatedImageUrl } = entry;
+  
+  // Use provided themeIndex or derive from subject
+  const activeThemeIndex = themeIndex !== undefined 
+    ? themeIndex 
+    : (SUBJECT_THEME_MAP[formData.subject] ?? 4);
+  
+  const docTheme = MEETING_THEMES[activeThemeIndex % MEETING_THEMES.length];
+
+  // Helper for bold/italic parsing in summary
+  const renderFormattedText = (text: string) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} className="font-black" style={{ color: docTheme.text }}>{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={i} className="italic text-slate-700">{part.slice(1, -1)}</em>;
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div id={id} className="rpm-document-wrapper">
+      {/* PAGE 1: INFORMASI UMUM */}
+      <div className="a4-page leading-none">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-black uppercase underline decoration-4 underline-offset-8 mb-2" style={{ textDecorationColor: docTheme.accent }}>Rencana Pembelajaran Mendalam (RPM)</h2>
+          <p className="font-bold text-lg uppercase tracking-widest">Kurikulum Merdeka - Semester Genap 2026</p>
+        </div>
+
+        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>INFORMASI UMUM</div>
+        
+        <div className="mb-6">
+          <h3 className="font-bold text-lg mb-3">A. Identitas Modul</h3>
+          <table className="table-spreadsheet">
+            <tbody>
+              <tr><td className="col-key">Satuan Pendidikan</td><td className="font-bold uppercase">{formData.schoolName}</td></tr>
+              <tr><td className="col-key">Mata Pelajaran</td><td className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.subject}</td></tr>
+              {formData.chapter && (
+                <tr><td className="col-key">Bab / Unit</td><td className="font-bold uppercase">{formData.chapter} {formData.chapterTitle ? `: ${formData.chapterTitle}` : ''}</td></tr>
+              )}
+              <tr><td className="col-key">Kelas / Fase</td><td className="font-bold">{formData.grade} / Fase {formData.grade.includes('1') || formData.grade.includes('2') ? 'A' : formData.grade.includes('3') || formData.grade.includes('4') ? 'B' : 'C'}</td></tr>
+              <tr><td className="col-key">Alokasi Waktu</td><td className="font-bold">{formData.meetingCount} Pertemuan ({formData.duration})</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-bold text-lg mb-3">B. Identifikasi Murid</h3>
+          {typeof generatedContent.students === 'string' ? (
+            <div className="p-6 border-2 border-black rounded-2xl bg-slate-50 text-justify leading-none">
+              {generatedContent.students}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-4 border-2 border-black rounded-2xl bg-slate-50">
+                <div className="font-black text-[10px] uppercase tracking-widest mb-1 text-indigo-600">1. Pengetahuan Awal</div>
+                <p className="text-sm leading-tight text-justify">{generatedContent.students.priorKnowledge}</p>
+              </div>
+              <div className="p-4 border-2 border-black rounded-2xl bg-slate-50">
+                <div className="font-black text-[10px] uppercase tracking-widest mb-1 text-emerald-600">2. Minat Belajar</div>
+                <p className="text-sm leading-tight text-justify">{generatedContent.students.interests}</p>
+              </div>
+              <div className="p-4 border-2 border-black rounded-2xl bg-slate-50">
+                <div className="font-black text-[10px] uppercase tracking-widest mb-1 text-rose-600">3. Kebutuhan Belajar</div>
+                <p className="text-sm leading-tight text-justify">{generatedContent.students.needs}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-bold text-lg mb-3">C. Materi Pelajaran</h3>
+          <table className="table-spreadsheet">
+            <tbody>
+              <tr style={{ backgroundColor: docTheme.header + '30' }}>
+                <td colSpan={2} className="p-4 font-bold text-center uppercase" style={{ color: docTheme.text }}>
+                  Materi Pokok: {formData.material}
+                </td>
+              </tr>
+              {generatedImageUrl && (
+                <tr>
+                  <td colSpan={2} className="p-4 text-center bg-white">
+                     <img 
+                       src={generatedImageUrl} 
+                       alt="Visual Materi" 
+                       style={{ 
+                         maxHeight: '200px', 
+                         maxWidth: '100%', 
+                         objectFit: 'contain', 
+                         borderRadius: '12px',
+                         margin: '0 auto',
+                         display: 'block',
+                         border: '1px solid #e2e8f0'
+                       }} 
+                     />
+                  </td>
+                </tr>
+              )}
+              <tr>
+                <td colSpan={2} className="p-6 text-justify leading-none whitespace-pre-line">
+                  {renderFormattedText(generatedContent.summary)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-bold text-lg mb-3">D. Dimensi Profil Lulusan</h3>
+          <div className="space-y-3">
+            {Array.isArray(generatedContent.dimensions) ? (
+              generatedContent.dimensions.map((dim, dIdx) => (
+                <div key={dIdx} className="p-4 border-2 border-black rounded-2xl bg-indigo-50">
+                  <div className="font-black text-xs uppercase tracking-wider text-indigo-900 mb-1">{dim.dimension}</div>
+                  <div className="text-sm leading-tight text-indigo-800 italic">{dim.elements}</div>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 border-2 border-black rounded-2xl bg-indigo-50 font-bold text-indigo-900">
+                {generatedContent.dimensions}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* PAGE 2: DESAIN PEMBELAJARAN */}
+      <div className="a4-page leading-none">
+        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>E. DESAIN PEMBELAJARAN</div>
+        <table className="table-spreadsheet">
+          <tbody>
+            <tr><td className="col-key">Capaian Pembelajaran</td><td className="text-justify leading-none">{formData.cp}</td></tr>
+            <tr><td className="col-key">Tujuan Pembelajaran</td><td className="text-justify leading-none font-bold">{formData.tp}</td></tr>
+            <tr><td className="col-key">Praktik Pedagogis</td><td className="font-bold italic" style={{ color: docTheme.accent }}>{generatedContent.pedagogy}</td></tr>
+            <tr><td className="col-key">Lintas Disiplin Ilmu</td><td className="text-justify leading-none">{generatedContent.interdisciplinary}</td></tr>
+            <tr><td className="col-key">Pemanfaatan Digital</td><td className="text-justify leading-none">{generatedContent.digitalTools}</td></tr>
+          </tbody>
+        </table>
+        
+        <div className="mt-10 text-center p-10 border-2 border-dashed border-slate-200 rounded-3xl">
+          <p className="text-slate-400 italic text-sm">Halaman ini berisi ringkasan desain instruksional. Rincian pertemuan dimulai pada halaman berikutnya.</p>
+        </div>
+      </div>
+
+      {/* PAGE 3+: PENGALAMAN BELAJAR (One Meeting per Page for A4 consistency) */}
+      {generatedContent.meetings.map((meeting, idx) => {
+        const theme = MEETING_THEMES[(activeThemeIndex + idx) % MEETING_THEMES.length];
+        return (
+          <div key={idx} className="a4-page leading-none">
+            {idx === 0 && (
+              <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>F. PENGALAMAN BELAJAR (RINCIAN PER PERTEMUAN)</div>
+            )}
+            
+            <div className="mb-6 border-2 border-indigo-900/10 rounded-3xl p-6 bg-white shadow-sm overflow-hidden" style={{ borderColor: theme.accent + '20' }}>
+              <div className="flex items-center justify-between mb-6 border-b pb-4">
+                <div className="meeting-badge !m-0" style={{ backgroundColor: theme.accent }}>PERTEMUAN KE-{idx + 1}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: theme.accent }}>Deep Learning Session</div>
+              </div>
+              
+              <table className="table-spreadsheet !m-0" style={{ borderColor: theme.accent }}>
+                <tbody>
+                  <tr>
+                    <td colSpan={2} className="p-8 leading-none whitespace-pre-line text-justify">
+                      <div className="font-bold uppercase mb-4 text-center py-3 border-b-2" style={{ backgroundColor: theme.header, color: theme.text, borderColor: theme.accent }}>
+                        1. KEGIATAN AWAL ({meeting.opening.duration})
+                      </div>
+                      {meeting.opening.steps}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={2} className="p-0 border-t-2" style={{ borderColor: theme.accent }}>
+                      <div className="font-bold uppercase text-center py-3 border-b-2" style={{ backgroundColor: theme.header, color: theme.text, borderColor: theme.accent }}>
+                        2. KEGIATAN INTI ({meeting.understand.duration} + {meeting.apply.duration} + {meeting.reflect.duration})
+                      </div>
+                      <div className="p-6 space-y-6">
+                        <div className="whitespace-pre-line text-justify leading-none">
+                          <div className="font-bold italic mb-2 text-indigo-900" style={{ color: theme.accent }}>A. Understand (Memahami)</div>
+                          {meeting.understand.steps}
+                        </div>
+                        <div className="whitespace-pre-line text-justify leading-none border-t border-dashed pt-4" style={{ borderColor: theme.accent + '40' }}>
+                          <div className="font-bold italic mb-2 text-indigo-900" style={{ color: theme.accent }}>B. Apply (Menerapkan)</div>
+                          {meeting.apply.steps}
+                        </div>
+                        <div className="whitespace-pre-line text-justify leading-none border-t border-dashed pt-4" style={{ borderColor: theme.accent + '40' }}>
+                          <div className="font-bold italic mb-2 text-indigo-900" style={{ color: theme.accent }}>C. Reflect (Refleksi)</div>
+                          {meeting.reflect.steps}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={2} className="p-8 leading-none whitespace-pre-line text-justify border-t-2" style={{ borderColor: theme.accent }}>
+                      <div className="font-bold uppercase mb-4 text-center py-3 border-b-2" style={{ backgroundColor: theme.header, color: theme.text, borderColor: theme.accent }}>
+                        3. KEGIATAN AKHIR ({meeting.closing.duration})
+                      </div>
+                      {meeting.closing.steps}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* PAGE N: ASESMEN, PENGAYAAN, REMEDIAL */}
+      <div className="a4-page leading-none">
+        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>G. ASESMEN PEMBELAJARAN</div>
+        <table className="table-spreadsheet">
+          <thead>
+            <tr className="bg-slate-100 font-bold">
+              <th className="text-center" style={{width: '20%'}}>Komponen</th>
+              <th className="text-center" style={{width: '25%'}}>Teknik Penilaian</th>
+              <th className="text-center" style={{width: '25%'}}>Instrumen Penilaian</th>
+              <th className="text-center">Rubrik / Kriteria</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="font-bold text-center bg-slate-50">Awal (Diagnostik)</td>
+              <td className="text-center">{generatedContent.assessments.initial.technique}</td>
+              <td>{generatedContent.assessments.initial.instrument}</td>
+              <td className="text-justify text-sm leading-none">{generatedContent.assessments.initial.rubric}</td>
+            </tr>
+            <tr>
+              <td className="font-bold text-center bg-slate-50">Proses (Formatif)</td>
+              <td className="text-center">{generatedContent.assessments.process.technique}</td>
+              <td>{generatedContent.assessments.process.instrument}</td>
+              <td className="text-justify text-sm leading-none">{generatedContent.assessments.process.rubric}</td>
+            </tr>
+            <tr>
+              <td className="font-bold text-center bg-slate-50">Akhir (Sumatif)</td>
+              <td className="text-center">{generatedContent.assessments.final.technique}</td>
+              <td>{generatedContent.assessments.final.instrument}</td>
+              <td className="text-justify text-sm leading-none">{generatedContent.assessments.final.rubric}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6 mt-10" style={{ backgroundColor: docTheme.header }}>H. PENGAYAAN DAN REMEDIAL</div>
+        <table className="table-spreadsheet">
+          <tbody>
+            <tr>
+              <td className="col-key">Pengayaan</td>
+              <td className="p-6 text-justify leading-none">{generatedContent.enrichment}</td>
+            </tr>
+            <tr>
+              <td className="col-key">Remedial</td>
+              <td className="p-6 text-justify leading-none">{generatedContent.remedial}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* PAGE N+1: REFLEKSI & TANDA TANGAN */}
+      <div className="a4-page leading-none">
+        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>I. REFLEKSI & PENGESAHAN</div>
+        
+        <div className="mb-10">
+          <h3 className="font-bold text-lg mb-6">Refleksi diri peserta didik dan pendidik</h3>
+          <table className="table-spreadsheet">
+            <tbody>
+              <tr>
+                <td className="col-key">Refleksi Pendidik</td>
+                <td className="p-6 text-justify leading-none whitespace-pre-line italic">{generatedContent.reflectionTeacher}</td>
+              </tr>
+              <tr>
+                <td className="col-key">Refleksi Peserta Didik</td>
+                <td className="p-6 text-justify leading-none whitespace-pre-line italic">{generatedContent.reflectionStudent}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-20">
+          <table className="table-signatures mt-6 mb-10">
+            <tbody>
+              <tr>
+                <td>
+                  <p className="mb-2">Mengetahui,</p>
+                  <p className="font-bold mb-24 uppercase">Kepala Sekolah</p>
+                  <p className="font-bold underline text-lg">{formData.principalName}</p>
+                  <p className="text-sm">NIP. {formData.principalNip}</p>
+                </td>
+                <td>
+                  <p className="mb-2">Lubuak Tarok, .................... 2026</p>
+                  <p className="font-bold mb-24 uppercase">Guru Kelas</p>
+                  <p className="font-bold underline text-lg">{formData.teacherName}</p>
+                  <p className="text-sm">NIP. {formData.teacherNip}</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* PAGE N+2: LAMPIRAN */}
+      <div className="a4-page leading-none">
+        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-8" style={{ backgroundColor: docTheme.header }}>LAMPIRAN: INSTRUMEN PENILAIAN (SOAL HOTS & KUNCI JAWABAN)</div>
+        
+        <table className="table-spreadsheet">
+          <thead>
+            <tr style={{ backgroundColor: docTheme.header }}>
+              <th className="text-center" style={{ width: '50px' }}>No</th>
+              <th className="text-center">Butir Soal (HOTS) & Pilihan Jawaban</th>
+              <th className="text-center" style={{ width: '80px' }}>Kunci</th>
+            </tr>
+          </thead>
+          <tbody>
+            {generatedContent.formativeQuestions.map((q, qIdx) => (
+              <tr key={qIdx}>
+                <td className="text-center font-bold">{qIdx + 1}</td>
+                <td className="p-4">
+                  <p className="font-bold mb-3 text-justify">{q.question}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {(['a', 'b', 'c', 'd'] as const).map((opt) => (
+                      <div key={opt} className="flex items-start gap-2">
+                        <span className="font-bold uppercase shrink-0">{opt}.</span>
+                        <span>{q.options[opt]}</span>
+                      </div>
+                    ))}
+                  </div>
+                </td>
+                <td className="text-center align-middle">
+                  <div className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center font-black mx-auto bg-slate-50">
+                    {q.answer.toUpperCase()}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="mt-12 pt-8 border-t-2 border-dashed border-slate-200 text-center">
+          <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-100 rounded-full mb-4">
+             <School size={14} className="text-slate-400" />
+             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">SDN 14 Lubuak Tarok • Sijunjung</span>
+          </div>
+          <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">Dokumen ini dihasilkan secara otomatis oleh Sistem Kecerdasan Buatan RPM 2026</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [state, setState] = useState<RPMState>({
     formData: INITIAL_FORM,
@@ -143,6 +507,9 @@ export default function App() {
   const [lkpdData, setLkpdData] = useState<LKPDContent | null>(null);
   const [questionsData, setQuestionsData] = useState<FormativeQuestion[] | null>(null);
   const [isGeneratingExtra, setIsGeneratingExtra] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("topik");
+  const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
+  const [selectedThemeIndex, setSelectedThemeIndex] = useState<number | null>(null);
 
   // Helper for bold/italic parsing in summary
   const renderFormattedText = (text: string) => {
@@ -295,6 +662,21 @@ export default function App() {
       else finalValue = num;
     }
 
+    if (name === 'chapter') {
+      const matchedTopic = aiTopics.find(t => t.chapter.toLowerCase() === value.toLowerCase());
+      if (matchedTopic && !state.formData.chapterTitle) {
+        setState(prev => ({
+          ...prev,
+          formData: { 
+            ...prev.formData, 
+            chapter: value,
+            chapterTitle: matchedTopic.title 
+          }
+        }));
+        return;
+      }
+    }
+
     setState(prev => ({
       ...prev,
       formData: { ...prev.formData, [name]: finalValue }
@@ -351,7 +733,8 @@ export default function App() {
       timestamp: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
       formData: state.formData,
       generatedContent: state.generatedContent,
-      generatedImageUrl: state.generatedImageUrl
+      generatedImageUrl: state.generatedImageUrl,
+      themeIndex: selectedThemeIndex !== null ? selectedThemeIndex : undefined
     };
 
     const newLibrary = [newEntry, ...library];
@@ -368,6 +751,7 @@ export default function App() {
       generatedImageUrl: entry.generatedImageUrl,
       error: null
     }));
+    setSelectedThemeIndex(entry.themeIndex !== undefined ? entry.themeIndex : null);
     setTopicSearchQuery(entry.formData.material);
     setShowLibrary(false);
   };
@@ -424,6 +808,31 @@ export default function App() {
     finally { setIsGeneratingExtra(false); }
   };
 
+  const handleBatchDownload = (type: 'pdf' | 'word') => {
+    if (selectedLibraryIds.length === 0) {
+      alert("Pilih minimal satu RPM untuk diekspor!");
+      return;
+    }
+    
+    // We'll use a temporary container for batch export
+    const containerId = "batch-export-container";
+    downloadDocument(containerId, `Batch_RPM_${new Date().getTime()}`, type);
+  };
+
+  const toggleLibrarySelection = (id: string) => {
+    setSelectedLibraryIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllLibrary = () => {
+    if (selectedLibraryIds.length === library.length) {
+      setSelectedLibraryIds([]);
+    } else {
+      setSelectedLibraryIds(library.map(e => e.id));
+    }
+  };
+
   const resetForm = () => {
     if (confirm("Reset data form?")) {
       localStorage.removeItem('rpm_form_data');
@@ -438,9 +847,15 @@ export default function App() {
     const opt = {
       margin: 0,
       filename: `${filename}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: [210, 330], orientation: 'portrait' },
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: { 
+        scale: 3, 
+        useCORS: true, 
+        letterRendering: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
       pagebreak: { mode: ['css', 'legacy'] }
     };
 
@@ -451,66 +866,169 @@ export default function App() {
     } else if (type === 'pdf') {
       html2pdf().from(element).set(opt).save();
     } else {
+      const activeThemeIndex = selectedThemeIndex !== null 
+        ? selectedThemeIndex 
+        : (SUBJECT_THEME_MAP[state.formData.subject] ?? 4);
+      const docTheme = MEETING_THEMES[activeThemeIndex];
+
       const contentHtml = element.innerHTML;
       const htmlHeader = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
           <meta charset='utf-8'>
           <title>Export Word</title>
+          <!--[if gte mso 9]>
           <xml>
             <w:WordDocument>
               <w:View>Print</w:View>
               <w:Zoom>100</w:Zoom>
               <w:DoNotOptimizeForBrowser/>
+              <w:Compatibility>
+                <w:BreakWrappedTables/>
+                <w:SnapToGridInCell/>
+                <w:WrapTextWithPunct/>
+                <w:UseAsianBreakRules/>
+                <w:DontGrowAutofit/>
+              </w:Compatibility>
             </w:WordDocument>
           </xml>
+          <![endif]-->
           <style>
+            @font-face {
+              font-family: 'Arial Narrow';
+              panose-1: 2 11 5 6 2 2 2 3 2 4;
+              mso-font-charset: 0;
+              mso-generic-font-family: sans-serif;
+              mso-font-pitch: variable;
+              mso-font-signature: 647 0 0 0 159 0;
+            }
             @page WordSection1 {
-              size: 210mm 330mm;
-              margin: 15mm 10mm 15mm 10mm;
+              size: 210mm 297mm;
+              margin: 20mm;
               mso-header-margin: 35.4pt;
               mso-footer-margin: 35.4pt;
               mso-paper-source: 0;
             }
             div.WordSection1 {
               page: WordSection1;
-              font-family: 'Times New Roman', serif;
             }
             body {
-              font-family: 'Times New Roman', serif;
-              font-size: 11pt;
+              font-family: 'Arial Narrow', Arial, sans-serif;
+              font-size: 10pt;
+              line-height: 1.0;
+              mso-line-height-rule: exactly;
+              color: black;
+            }
+            p, div, li {
+              margin: 0in;
+              margin-bottom: .0001pt;
+              mso-pagination: widow-orphan;
+              font-size: 10pt;
+              font-family: 'Arial Narrow', Arial, sans-serif;
             }
             table {
               border-collapse: collapse;
               width: 100%;
               border: 1.5pt solid black;
               mso-border-alt: solid black 1.5pt;
+              margin-bottom: 10pt;
+              mso-table-lspace: 0pt;
+              mso-table-rspace: 0pt;
+              mso-table-anchor-vertical: paragraph;
+              mso-table-anchor-horizontal: column;
+              mso-table-left: center;
+              mso-padding-alt: 0in 5.4pt 0in 5.4pt;
             }
             td, th {
               border: 1pt solid black;
               mso-border-alt: solid black 1pt;
-              padding: 6pt;
+              padding: 4pt 6pt;
               vertical-align: top;
+              font-size: 10pt;
+              font-family: 'Arial Narrow', Arial, sans-serif;
             }
             .table-header-pink {
-              background-color: #fce4ec !important;
+              background-color: ${docTheme.header} !important;
               font-weight: bold;
               text-align: center;
-              mso-shading: #fce4ec;
+              mso-shading: ${docTheme.header};
+              text-transform: uppercase;
+            }
+            .col-key {
+              background-color: #f8fafc !important;
+              font-weight: bold;
+              mso-shading: #f8fafc;
+              width: 120pt;
             }
             .text-center { text-align: center; }
+            .text-justify { text-align: justify; }
             .font-bold { font-weight: bold; }
+            .font-black { font-weight: 900; }
             .uppercase { text-transform: uppercase; }
             .underline { text-decoration: underline; }
+            .italic { font-style: italic; }
+            .whitespace-pre-line { white-space: pre-line; }
+            .leading-relaxed { line-height: 1.0; }
+            .leading-none { line-height: 1.0; }
+            
+            /* Meeting Badge approximation */
             .meeting-badge {
-              background-color: #1e1b4b;
+              background-color: ${docTheme.accent};
               color: white;
-              padding: 4pt 8pt;
+              padding: 4pt 10pt;
               font-weight: bold;
               display: inline-block;
-              mso-shading: #1e1b4b;
+              mso-shading: ${docTheme.accent};
+              border-radius: 4pt;
+              font-size: 9pt;
             }
-            .page-break { page-break-before: always; }
+            
+            /* Section Headers */
+            .bg-\\[\\#fce4ec\\] {
+              background-color: ${docTheme.header} !important;
+              mso-shading: ${docTheme.header};
+            }
+            
+            /* Page Break */
+            .page-break { 
+              page-break-before: always;
+              mso-special-character: page-break;
+            }
+
+            /* HOTS Questions Styling */
+            .bg-slate-50\\/30 { background-color: #f8fafc !important; mso-shading: #f8fafc; }
+            .bg-indigo-600 { background-color: #4f46e5 !important; mso-shading: #4f46e5; }
+            .bg-indigo-900 { background-color: #1e1b4b !important; mso-shading: #1e1b4b; }
+            .bg-indigo-100 { background-color: #e0e7ff !important; mso-shading: #e0e7ff; }
+            .bg-rose-100 { background-color: #ffe4e6 !important; mso-shading: #ffe4e6; }
+            .text-white { color: white !important; }
+            .text-indigo-600 { color: #4f46e5 !important; }
+            .text-indigo-700 { color: #4338ca !important; }
+            .text-indigo-900 { color: #1e1b4b !important; }
+            .text-rose-700 { color: #be123c !important; }
+            
+            .rounded-3xl { border-radius: 15pt; }
+            .rounded-2xl { border-radius: 10pt; }
+            .rounded-full { border-radius: 50%; }
+            
+            .p-6 { padding: 15pt; }
+            .p-10 { padding: 25pt; }
+            .mb-8 { margin-bottom: 20pt; }
+            .mb-10 { margin-bottom: 25pt; }
+            .mt-10 { margin-top: 25pt; }
+            .mt-16 { margin-top: 40pt; }
+            
+            /* Grid approximation for Word */
+            .grid { display: block; }
+            .grid-cols-5 > div { width: 18%; display: inline-block; margin: 1%; vertical-align: top; }
+            .grid-cols-1.md\\:grid-cols-2 > div { width: 45%; display: inline-block; margin: 2%; vertical-align: top; }
+            
+            .flex { display: block; }
+            .flex-col { display: block; }
+            .items-center { vertical-align: middle; }
+            .justify-center { text-align: center; }
+            
+            img { max-width: 100%; height: auto; }
           </style>
         </head>
         <body>
@@ -563,7 +1081,7 @@ export default function App() {
       {showLibrary && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-indigo-950/80 backdrop-blur-md p-4 no-print animate-in fade-in duration-200">
            <div className="bg-white w-full max-w-6xl h-[85vh] rounded-[3rem] overflow-hidden flex flex-col shadow-2xl">
-              <div className="bg-indigo-900 p-8 flex justify-between items-center text-white shrink-0">
+              <div className="bg-indigo-900 p-8 flex flex-col md:flex-row justify-between items-center text-white shrink-0 gap-6">
                   <div className="flex items-center gap-4">
                      <Library size={32} className="text-indigo-300"/>
                      <div>
@@ -571,38 +1089,84 @@ export default function App() {
                        <p className="text-indigo-300 text-xs">Arsip Perencanaan Pembelajaran SDN 14 Lubuak Tarok</p>
                      </div>
                   </div>
-                  <button onClick={() => setShowLibrary(false)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white font-bold text-xs uppercase px-6">
-                    Tutup
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {library.length > 0 && (
+                      <div className="flex bg-white/10 p-1 rounded-2xl border border-white/10">
+                        <button 
+                          onClick={selectAllLibrary}
+                          className="px-4 py-2 text-[10px] font-black uppercase hover:bg-white/10 rounded-xl transition-colors"
+                        >
+                          {selectedLibraryIds.length === library.length ? "Batal Semua" : "Pilih Semua"}
+                        </button>
+                        <div className="w-px bg-white/10 mx-1 my-2"></div>
+                        <button 
+                          onClick={() => handleBatchDownload('word')}
+                          disabled={selectedLibraryIds.length === 0}
+                          className="px-4 py-2 text-[10px] font-black uppercase hover:bg-blue-500 rounded-xl transition-colors disabled:opacity-30 flex items-center gap-2"
+                        >
+                          <Download size={12}/> Word ({selectedLibraryIds.length})
+                        </button>
+                        <button 
+                          onClick={() => handleBatchDownload('pdf')}
+                          disabled={selectedLibraryIds.length === 0}
+                          className="px-4 py-2 text-[10px] font-black uppercase hover:bg-rose-500 rounded-xl transition-colors disabled:opacity-30 flex items-center gap-2"
+                        >
+                          <FileDown size={12}/> PDF ({selectedLibraryIds.length})
+                        </button>
+                      </div>
+                    )}
+                    <button onClick={() => setShowLibrary(false)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white font-bold text-xs uppercase px-6">
+                      Tutup
+                    </button>
+                  </div>
               </div>
               <div className="flex-1 overflow-y-auto p-10 bg-slate-50 custom-scrollbar">
                  {library.length > 0 ? (
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {library.map((entry) => (
-                        <div key={entry.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
-                           <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                              <BookMarked className="text-indigo-100 transform rotate-12 scale-150" size={80} />
-                           </div>
-                           <div className="relative z-10">
-                              <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-black uppercase mb-3">
-                                {entry.formData.grade} • {entry.formData.subject}
-                              </span>
-                              <h4 className="font-bold text-lg text-slate-800 mb-2 leading-tight line-clamp-2 h-14">{entry.formData.material}</h4>
-                              <p className="text-slate-400 text-xs mb-6 flex items-center gap-2">
-                                <Clock size={12} /> Disimpan: {entry.timestamp}
-                              </p>
-                              
-                              <div className="flex gap-2 mt-auto">
-                                 <button onClick={() => handleLoadFromLibrary(entry)} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-xs hover:bg-indigo-700 flex items-center justify-center gap-2">
-                                   <FolderOpen size={14} /> BUKA
-                                 </button>
-                                 <button onClick={() => handleDeleteFromLibrary(entry.id)} className="px-4 bg-rose-100 text-rose-600 rounded-xl hover:bg-rose-200 transition-colors">
-                                   <Trash2 size={16} />
-                                 </button>
-                              </div>
-                           </div>
-                        </div>
-                      ))}
+                      {library.map((entry) => {
+                        const isSelected = selectedLibraryIds.includes(entry.id);
+                        const entryTheme = entry.themeIndex !== undefined 
+                          ? MEETING_THEMES[entry.themeIndex % MEETING_THEMES.length] 
+                          : MEETING_THEMES[(SUBJECT_THEME_MAP[entry.formData.subject] ?? 4) % MEETING_THEMES.length];
+                        
+                        return (
+                          <div 
+                            key={entry.id} 
+                            onClick={() => toggleLibrarySelection(entry.id)}
+                            className={`bg-white p-6 rounded-3xl border-2 transition-all group relative overflow-hidden cursor-pointer ${isSelected ? 'border-indigo-600 shadow-indigo-100 shadow-xl' : 'border-slate-200 shadow-md hover:shadow-lg'}`}
+                          >
+                             <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: entryTheme.accent }}></div>
+                             <div className="absolute top-4 right-4 z-20">
+                               {isSelected ? (
+                                 <CheckSquare className="text-indigo-600" size={24} />
+                               ) : (
+                                 <Square className="text-slate-200 group-hover:text-slate-300" size={24} />
+                               )}
+                             </div>
+                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <BookMarked className="text-indigo-900 transform rotate-12 scale-150" size={80} />
+                             </div>
+                             <div className="relative z-10 pl-2">
+                                <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase mb-3" style={{ backgroundColor: entryTheme.header, color: entryTheme.text }}>
+                                  {entry.formData.grade} • {entry.formData.subject}
+                                </span>
+                                <h4 className="font-bold text-lg text-slate-800 mb-2 leading-tight line-clamp-2 h-14">{entry.formData.material}</h4>
+                                <p className="text-slate-400 text-xs mb-6 flex items-center gap-2">
+                                  <Clock size={12} /> Disimpan: {entry.timestamp}
+                                </p>
+                                
+                                <div className="flex gap-2 mt-auto" onClick={e => e.stopPropagation()}>
+                                   <button onClick={() => handleLoadFromLibrary(entry)} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-xs hover:bg-indigo-700 flex items-center justify-center gap-2">
+                                     <FolderOpen size={14} /> BUKA
+                                   </button>
+                                   <button onClick={() => handleDeleteFromLibrary(entry.id)} className="px-4 bg-rose-100 text-rose-600 rounded-xl hover:bg-rose-200 transition-colors">
+                                     <Trash2 size={16} />
+                                   </button>
+                                </div>
+                             </div>
+                          </div>
+                        );
+                      })}
                    </div>
                  ) : (
                    <div className="flex flex-col items-center justify-center h-full opacity-50">
@@ -665,7 +1229,7 @@ export default function App() {
                     </>
                   )}
                   {lkpdData && (
-                    <div className="f4-page">
+                    <div className="a4-page">
                       <h2 className="text-center text-xl font-bold underline mb-8 uppercase">{lkpdData.title}</h2>
                       
                       <table className="table-spreadsheet mb-8">
@@ -718,7 +1282,7 @@ export default function App() {
                     </div>
                   )}
                   {questionsData && (
-                    <div className="f4-page">
+                    <div className="a4-page">
                        <div className="text-center mb-6 border-b-4 border-double border-black pb-4">
                           <h2 className="text-xl font-black uppercase tracking-wide">PENILAIAN HARIAN (FORMATIF)</h2>
                           <h3 className="text-lg font-bold uppercase tracking-wider">{state.formData.schoolName}</h3>
@@ -849,163 +1413,242 @@ export default function App() {
               {isGeneratingExtra && <Loader2 className="animate-spin text-white" size={20}/>}
             </div>
             
-            <form onSubmit={handleSubmit} className="p-10 space-y-10 max-h-[75vh] overflow-y-auto custom-scrollbar">
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="col-span-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Mata Pelajaran</label>
-                    <select name="subject" value={state.formData.subject} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 transition-all">
-                      {SD_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar bg-slate-50/50">
+              {/* SECTION 1: IDENTITAS GURU & SEKOLAH */}
+              <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition-all">
+                <button 
+                  type="button"
+                  onClick={() => setActiveSection(activeSection === "identitas" ? "" : "identitas")}
+                  className={`w-full px-6 py-5 flex items-center justify-between transition-colors ${activeSection === "identitas" ? "bg-indigo-50 text-indigo-700" : "hover:bg-slate-50 text-slate-700"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <UserCircle size={20} className={activeSection === "identitas" ? "text-indigo-600" : "text-slate-400"} />
+                    <span className="font-black text-xs uppercase tracking-wider">Identitas Guru & Sekolah</span>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Kelas</label>
-                    <select name="grade" value={state.formData.grade} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50">
-                      {SD_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Jml Pertemuan</label>
-                    <div className="relative">
-                      <input type="number" name="meetingCount" value={state.formData.meetingCount} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 outline-none pl-10" min="1" max="10"/>
-                      <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
-                    </div>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Alokasi Waktu per Pertemuan</label>
-                    <div className="relative">
-                      <input type="text" name="duration" value={state.formData.duration} onChange={handleInputChange} placeholder="contoh: 2 x 35 menit" className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 outline-none pl-10"/>
-                      <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <button type="button" onClick={handleGenProta} className="py-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 hover:bg-amber-100 transition-colors shadow-sm">
-                    <ClipboardList size={20}/> PROTA
-                  </button>
-                  <button type="button" onClick={handleGenPromes} className="py-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 hover:bg-emerald-100 transition-colors shadow-sm">
-                    <Calendar size={20}/> PROMES
-                  </button>
-                  <button type="button" onClick={handleGenLKPD} className="py-4 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 hover:bg-indigo-100 transition-colors shadow-sm">
-                    <BookOpen size={20}/> LKPD
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-6" ref={comboboxRef}>
-                <label className="text-[10px] font-black text-indigo-700 uppercase flex items-center gap-2 mb-2">
-                  Pilih Bab & Materi Pokok (Smt 2) {isFetchingTopics && <Loader2 className="animate-spin" size={12}/>}
-                </label>
-                <div className="relative">
-                    <div className="flex items-center border-2 border-indigo-200 rounded-2xl bg-indigo-50/30 overflow-hidden focus-within:border-indigo-500 transition-all shadow-sm">
-                       <Search className="ml-4 text-indigo-400" size={18} />
-                       <input 
-                         type="text" placeholder="Cari materi pokok..." 
-                         value={topicSearchQuery}
-                         onChange={(e) => { setTopicSearchQuery(e.target.value); setIsComboboxOpen(true); }}
-                         onFocus={() => setIsComboboxOpen(true)}
-                         className="flex-1 p-4 font-bold outline-none bg-transparent"
-                       />
-                    </div>
-                    {isComboboxOpen && (
-                      <div className="absolute z-[60] left-0 right-0 mt-3 bg-white border-2 border-indigo-200 rounded-3xl shadow-2xl max-h-[350px] overflow-y-auto custom-scrollbar">
-                        {filteredTopics.length > 0 ? filteredTopics.map((chap, i) => (
-                          <div key={i} className="border-b border-indigo-50 last:border-0">
-                             <div className="bg-indigo-900/5 px-6 py-3 font-black text-indigo-900 text-xs uppercase flex items-center gap-2">
-                                <BookMarked size={14}/> {chap.chapter}: {chap.title}
-                             </div>
-                             <div className="py-2">
-                               {chap.materials.map((mat, j) => (
-                                 <div 
-                                   key={j} 
-                                   onClick={() => handleTopicSelect(mat.title, mat.meetings, chap.chapter, chap.title)}
-                                   className="px-10 py-3 hover:bg-indigo-50 cursor-pointer text-sm font-bold text-slate-700 flex items-center justify-between gap-3 transition-colors group"
-                                 >
-                                   <div className="flex items-center gap-3">
-                                      <FileText size={14} className="text-slate-400 group-hover:text-indigo-500" /> 
-                                      {mat.title}
-                                   </div>
-                                   <span className="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-bold group-hover:bg-indigo-100 group-hover:text-indigo-700">
-                                      {mat.meetings} Pertemuan
-                                   </span>
-                                 </div>
-                               ))}
-                             </div>
-                          </div>
-                        )) : (
-                          <div className="p-10 text-center space-y-4">
-                             <p className="text-sm font-bold text-slate-400 uppercase">Materi tidak ditemukan</p>
-                             <button type="button" onClick={handleGenerateNewTopics} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase shadow-md">Buat Rincian Khusus</button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 pb-2 border-b-2 border-slate-100 mb-4">
-                  <Layout className="text-indigo-600" size={18} />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Desain Pembelajaran</span>
-                </div>
+                  <ChevronDown size={18} className={`transition-transform duration-300 ${activeSection === "identitas" ? "rotate-180" : ""}`} />
+                </button>
                 
-                {state.isPrefilling ? (
-                  <div className="p-10 bg-indigo-50 rounded-3xl text-center border-2 border-indigo-100 animate-pulse">
-                    <Loader2 className="animate-spin mx-auto text-indigo-600 mb-4" size={32} />
-                    <p className="text-xs font-black text-indigo-800 uppercase tracking-widest">Memproses Silabus 2026...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-8">
-                    <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">CP</label>
-                      <textarea name="cp" value={state.formData.cp} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-sm h-32 bg-slate-50 resize-none"></textarea>
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">TP</label>
-                      <textarea name="tp" value={state.formData.tp} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-sm h-32 bg-slate-50 resize-none"></textarea>
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase block">Praktik Pedagogis</label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {Object.values(PedagogicalPractice).map(p => (
-                          <button key={p} type="button" onClick={() => toggleCheckbox('pedagogy', p)} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left text-[11px] font-bold ${state.formData.pedagogy.includes(p) ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-500 hover:bg-slate-50'}`}>
-                            {state.formData.pedagogy.includes(p) ? <CheckSquare size={16} /> : <Square size={16} />} {p}
-                          </button>
-                        ))}
+                {activeSection === "identitas" && (
+                  <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Nama Sekolah</label>
+                        <input type="text" name="schoolName" value={state.formData.schoolName} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold text-sm bg-slate-50 focus:border-indigo-500 outline-none" />
                       </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase block">Profil Lulusan</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.values(GraduateDimension).map(d => (
-                          <button key={d} type="button" onClick={() => toggleCheckbox('dimensions', d)} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left text-[10px] font-bold ${state.formData.dimensions.includes(d) ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-500 hover:bg-slate-50'}`}>
-                            {state.formData.dimensions.includes(d) ? <CheckSquare size={14} /> : <Square size={14} />} {d}
-                          </button>
-                        ))}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Mata Pelajaran</label>
+                          <select name="subject" value={state.formData.subject} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold text-sm bg-slate-50 focus:border-indigo-500 outline-none">
+                            {SD_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Kelas</label>
+                          <select name="grade" value={state.formData.grade} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold text-sm bg-slate-50 focus:border-indigo-500 outline-none">
+                            {SD_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Nama Guru</label>
+                          <input type="text" name="teacherName" value={state.formData.teacherName} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold text-sm bg-slate-50 focus:border-indigo-500 outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">NIP Guru</label>
+                          <input type="text" name="teacherNip" value={state.formData.teacherNip} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-sm bg-slate-50 focus:border-indigo-500 outline-none" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Kepala Sekolah</label>
+                          <input type="text" name="principalName" value={state.formData.principalName} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold text-sm bg-slate-50 focus:border-indigo-500 outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">NIP Kepala Sekolah</label>
+                          <input type="text" name="principalNip" value={state.formData.principalNip} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-sm bg-slate-50 focus:border-indigo-500 outline-none" />
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 gap-4">
-                  <input type="text" name="teacherName" placeholder="Nama Guru" value={state.formData.teacherName} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold text-sm bg-slate-50" />
-                  <input type="text" name="teacherNip" placeholder="NIP Guru" value={state.formData.teacherNip} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-sm bg-slate-50" />
-                  <input type="text" name="principalName" placeholder="Nama Kepala Sekolah" value={state.formData.principalName} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold text-sm bg-slate-50" />
-                  <input type="text" name="principalNip" placeholder="NIP Kepala Sekolah" value={state.formData.principalNip} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-sm bg-slate-50" />
-                </div>
+              {/* SECTION 2: TOPIK & MATERI */}
+              <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition-all">
+                <button 
+                  type="button"
+                  onClick={() => setActiveSection(activeSection === "topik" ? "" : "topik")}
+                  className={`w-full px-6 py-5 flex items-center justify-between transition-colors ${activeSection === "topik" ? "bg-indigo-50 text-indigo-700" : "hover:bg-slate-50 text-slate-700"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <BookMarked size={20} className={activeSection === "topik" ? "text-indigo-600" : "text-slate-400"} />
+                    <span className="font-black text-xs uppercase tracking-wider">Topik & Materi Pokok</span>
+                  </div>
+                  <ChevronDown size={18} className={`transition-transform duration-300 ${activeSection === "topik" ? "rotate-180" : ""}`} />
+                </button>
+
+                {activeSection === "topik" && (
+                  <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
+                    <div className="space-y-4" ref={comboboxRef}>
+                      <label className="text-[10px] font-black text-indigo-700 uppercase flex items-center gap-2">
+                        Pilih Bab & Materi Pokok {isFetchingTopics && <Loader2 className="animate-spin" size={12}/>}
+                      </label>
+                      <div className="relative">
+                          <div className="flex items-center border-2 border-indigo-200 rounded-2xl bg-indigo-50/30 overflow-hidden focus-within:border-indigo-500 transition-all shadow-sm">
+                             <Search className="ml-4 text-indigo-400" size={18} />
+                             <input 
+                               type="text" placeholder="Cari materi pokok..." 
+                               value={topicSearchQuery}
+                               onChange={(e) => { setTopicSearchQuery(e.target.value); setIsComboboxOpen(true); }}
+                               onFocus={() => setIsComboboxOpen(true)}
+                               className="flex-1 p-4 font-bold outline-none bg-transparent text-sm"
+                             />
+                          </div>
+                          {isComboboxOpen && (
+                            <div className="absolute z-[60] left-0 right-0 mt-3 bg-white border-2 border-indigo-200 rounded-3xl shadow-2xl max-h-[300px] overflow-y-auto custom-scrollbar">
+                              {filteredTopics.length > 0 ? filteredTopics.map((chap, i) => (
+                                <div key={i} className="border-b border-indigo-50 last:border-0">
+                                   <div className="bg-indigo-900/5 px-6 py-3 font-black text-indigo-900 text-[10px] uppercase flex items-center gap-2">
+                                      <BookMarked size={12}/> {chap.chapter}: {chap.title}
+                                   </div>
+                                   <div className="py-1">
+                                     {chap.materials.map((mat, j) => (
+                                       <div 
+                                         key={j} 
+                                         onClick={() => handleTopicSelect(mat.title, mat.meetings, chap.chapter, chap.title)}
+                                         className="px-8 py-3 hover:bg-indigo-50 cursor-pointer text-xs font-bold text-slate-700 flex items-center justify-between gap-3 transition-colors group"
+                                       >
+                                         <div className="flex items-center gap-3">
+                                            <FileText size={14} className="text-slate-400 group-hover:text-indigo-500" /> 
+                                            {mat.title}
+                                         </div>
+                                         <span className="text-[9px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-bold group-hover:bg-indigo-100 group-hover:text-indigo-700">
+                                            {mat.meetings} JP
+                                         </span>
+                                       </div>
+                                     ))}
+                                   </div>
+                                </div>
+                              )) : (
+                                <div className="p-10 text-center space-y-4">
+                                   <p className="text-xs font-bold text-slate-400 uppercase">Materi tidak ditemukan</p>
+                                   <button type="button" onClick={handleGenerateNewTopics} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-[10px] uppercase shadow-md">Buat Rincian Khusus</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Bab / Unit</label>
+                        <input type="text" name="chapter" value={state.formData.chapter} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 outline-none text-sm" placeholder="Contoh: Bab 1" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Judul Bab</label>
+                        <input type="text" name="chapterTitle" value={state.formData.chapterTitle} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 outline-none text-sm" placeholder="Judul Bab" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Jml Pertemuan</label>
+                        <div className="relative">
+                          <input type="number" name="meetingCount" value={state.formData.meetingCount} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 outline-none pl-10 text-sm" min="1" max="10"/>
+                          <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Alokasi Waktu</label>
+                        <div className="relative">
+                          <input type="text" name="duration" value={state.formData.duration} onChange={handleInputChange} placeholder="2 x 35 menit" className="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:border-indigo-500 outline-none pl-10 text-sm"/>
+                          <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <button type="button" onClick={handleGenProta} disabled={isGeneratingExtra} className="py-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 hover:bg-amber-100 transition-colors shadow-sm disabled:opacity-50">
+                        {isGeneratingExtra ? <Loader2 className="animate-spin" size={20}/> : <ClipboardList size={20}/>} PROTA
+                      </button>
+                      <button type="button" onClick={handleGenPromes} disabled={isGeneratingExtra} className="py-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 hover:bg-emerald-100 transition-colors shadow-sm disabled:opacity-50">
+                        {isGeneratingExtra ? <Loader2 className="animate-spin" size={20}/> : <Calendar size={20}/>} PROMES
+                      </button>
+                      <button type="button" onClick={handleGenLKPD} disabled={isGeneratingExtra} className="py-4 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 hover:bg-indigo-100 transition-colors shadow-sm disabled:opacity-50">
+                        {isGeneratingExtra ? <Loader2 className="animate-spin" size={20}/> : <BookOpen size={20}/>} LKPD
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-3">
-                <button type="submit" disabled={state.isGenerating || !state.formData.material} className="w-full py-7 bg-indigo-700 text-white rounded-[2.5rem] font-black text-xl shadow-2xl hover:bg-indigo-800 disabled:bg-slate-300 transition-all">
-                  {state.isGenerating ? <Loader2 className="animate-spin mx-auto" size={32} /> : "HASILKAN RPM LENGKAP"}
+              {/* SECTION 3: DESAIN PEMBELAJARAN */}
+              <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition-all">
+                <button 
+                  type="button"
+                  onClick={() => setActiveSection(activeSection === "desain" ? "" : "desain")}
+                  className={`w-full px-6 py-5 flex items-center justify-between transition-colors ${activeSection === "desain" ? "bg-indigo-50 text-indigo-700" : "hover:bg-slate-50 text-slate-700"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Layout size={20} className={activeSection === "desain" ? "text-indigo-600" : "text-slate-400"} />
+                    <span className="font-black text-xs uppercase tracking-wider">Desain Pembelajaran</span>
+                  </div>
+                  <ChevronDown size={18} className={`transition-transform duration-300 ${activeSection === "desain" ? "rotate-180" : ""}`} />
                 </button>
-                <button type="button" onClick={handleGenQuestions} disabled={state.isGenerating || !state.formData.material} className="w-full py-5 bg-teal-600 text-white rounded-[2rem] font-black text-sm shadow-xl hover:bg-teal-700 disabled:bg-slate-300 transition-all flex items-center justify-center gap-2">
-                  {state.isGenerating ? <Loader2 className="animate-spin" size={20} /> : <><FileQuestion size={20}/> BUAT BANK SOAL (25 HOTS)</>}
+
+                {activeSection === "desain" && (
+                  <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
+                    {state.isPrefilling ? (
+                      <div className="p-10 bg-indigo-50 rounded-3xl text-center border-2 border-indigo-100 animate-pulse">
+                        <Loader2 className="animate-spin mx-auto text-indigo-600 mb-4" size={32} />
+                        <p className="text-[10px] font-black text-indigo-800 uppercase tracking-widest leading-relaxed">Menyelaraskan dengan Capaian Pembelajaran...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Capaian Pembelajaran (CP)</label>
+                          <textarea name="cp" value={state.formData.cp} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-xs h-24 bg-slate-50 resize-none focus:border-indigo-500 outline-none"></textarea>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Tujuan Pembelajaran (TP)</label>
+                          <textarea name="tp" value={state.formData.tp} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-xs h-24 bg-slate-50 resize-none focus:border-indigo-500 outline-none"></textarea>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase block">Praktik Pedagogis</label>
+                          <div className="grid grid-cols-1 gap-2">
+                            {Object.values(PedagogicalPractice).map(p => (
+                              <button key={p} type="button" onClick={() => toggleCheckbox('pedagogy', p)} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left text-[10px] font-bold ${state.formData.pedagogy.includes(p) ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-500 hover:bg-slate-50'}`}>
+                                {state.formData.pedagogy.includes(p) ? <CheckSquare size={14} className="shrink-0" /> : <Square size={14} className="shrink-0" />} {p}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase block">Profil Pelajar Pancasila</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {Object.values(GraduateDimension).map(d => (
+                              <button key={d} type="button" onClick={() => toggleCheckbox('dimensions', d)} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left text-[9px] font-bold ${state.formData.dimensions.includes(d) ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-500 hover:bg-slate-50'}`}>
+                                {state.formData.dimensions.includes(d) ? <CheckSquare size={12} className="shrink-0" /> : <Square size={12} className="shrink-0" />} {d}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 space-y-3">
+                <button type="submit" disabled={state.isGenerating || !state.formData.material} className="w-full py-6 bg-indigo-700 text-white rounded-[2rem] font-black text-lg shadow-2xl hover:bg-indigo-800 disabled:bg-slate-300 transition-all active:scale-[0.98]">
+                  {state.isGenerating ? <Loader2 className="animate-spin mx-auto" size={28} /> : "HASILKAN RPM LENGKAP"}
+                </button>
+                <button type="button" onClick={handleGenQuestions} disabled={state.isGenerating || isGeneratingExtra || !state.formData.material} className="w-full py-4 bg-teal-600 text-white rounded-[1.5rem] font-black text-xs shadow-xl hover:bg-teal-700 disabled:bg-slate-300 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
+                  {isGeneratingExtra ? <Loader2 className="animate-spin" size={18} /> : <><FileQuestion size={18}/> BUAT BANK SOAL (25 HOTS)</>}
                 </button>
               </div>
             </form>
@@ -1027,220 +1670,43 @@ export default function App() {
                 </div>
                 <div className="flex gap-4">
                   <button onClick={handleSaveToLibrary} className="bg-white/10 text-white px-6 py-4 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2 hover:bg-white/20 transition-colors border border-white/20"><Save size={18} /> SIMPAN</button>
-                  <button onClick={() => window.print()} className="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2 hover:bg-indigo-500"><Eye size={18} /> PREVIEW</button>
-                  <button onClick={() => downloadDocument('rpm-page-container', 'RPM_' + state.formData.material, 'word')} className="bg-blue-600 text-white px-6 py-4 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2 hover:bg-blue-500"><Download size={18} /> WORD</button>
+                  <button onClick={() => downloadDocument('rpm-document-content', 'RPM_' + state.formData.material, 'pdf')} className="bg-rose-600 text-white px-6 py-4 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2 hover:bg-rose-500"><FileDown size={18} /> PDF</button>
+                  <button onClick={() => downloadDocument('rpm-document-content', 'RPM_' + state.formData.material, 'word')} className="bg-blue-600 text-white px-6 py-4 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2 hover:bg-blue-500"><Download size={18} /> WORD</button>
                 </div>
               </div>
 
-              <div className="f4-preview-wrapper shadow-2xl rounded-[3rem] p-12 bg-slate-300/50">
-                <div id="rpm-page-container" className="f4-page-container">
-                  <div className="f4-page">
-                    <h2 className="text-center text-xl font-bold mb-10 underline uppercase tracking-tight">RENCANA PEMBELAJARAN MENDALAM (RPM)</h2>
-                    
-                    <table className="table-spreadsheet">
-                      <thead><tr><th colSpan={2} className="table-header-pink">1. IDENTITAS PEMBELAJARAN</th></tr></thead>
-                      <tbody>
-                        <tr><td className="col-key">Satuan Pendidikan</td><td>{state.formData.schoolName}</td></tr>
-                        <tr><td className="col-key">Mata Pelajaran</td><td>{state.formData.subject}</td></tr>
-                        <tr><td className="col-key">Kelas / Semester</td><td>{state.formData.grade} / Semester 2 (Genap)</td></tr>
-                        <tr><td className="col-key">Materi Pokok</td><td className="font-bold">
-                          {state.formData.chapter && state.formData.chapterTitle ? (
-                            `${state.formData.chapter}. ${state.formData.chapterTitle} (${state.formData.material})`
-                          ) : (
-                            state.formData.material
-                          )}
-                        </td></tr>
-                        <tr><td className="col-key">Alokasi Waktu</td><td className="font-bold">{state.formData.duration} / Pertemuan</td></tr>
-                        <tr><td className="col-key">Tahun Pelajaran</td><td>{state.formData.academicYear}</td></tr>
-                      </tbody>
-                    </table>
+              <div className="flex flex-wrap items-center gap-3 p-6 bg-indigo-950 rounded-[2rem] border border-white/10 no-print">
+                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mr-2">Tema Dokumen:</span>
+                {MEETING_THEMES.map((theme, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedThemeIndex(idx)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${selectedThemeIndex === idx ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                    style={{ backgroundColor: theme.accent }}
+                    title={theme.name}
+                  />
+                ))}
+                <button
+                  onClick={() => setSelectedThemeIndex(null)}
+                  className={`ml-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${selectedThemeIndex === null ? 'bg-white text-indigo-950 border-white' : 'bg-transparent text-white border-white/20 opacity-50'}`}
+                >
+                  Otomatis (Mapel)
+                </button>
+              </div>
 
-                    <table className="table-spreadsheet">
-                      <thead><tr><th colSpan={2} className="table-header-pink">2. DESAIN PEMBELAJARAN</th></tr></thead>
-                      <tbody>
-                        <tr><td className="col-key">CP</td><td className="text-justify">{state.formData.cp}</td></tr>
-                        <tr><td className="col-key">TP</td><td className="whitespace-pre-line">{state.formData.tp}</td></tr>
-                        <tr><td className="col-key">Praktik Pedagogis</td><td className="font-bold">{state.generatedContent.pedagogy}</td></tr>
-                        <tr><td className="col-key">Profil Lulusan</td><td className="font-bold">{state.generatedContent.dimensions}</td></tr>
-                      </tbody>
-                    </table>
-
-                    <div className="bg-[#fce4ec] border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6 mt-8">3. PENGALAMAN BELAJAR (PER PERTEMUAN)</div>
-                    
-                    {state.generatedContent.meetings.map((meeting, idx) => {
-                      const theme = MEETING_THEMES[idx % MEETING_THEMES.length];
-                      return (
-                        <div key={idx} className="mb-14 border-2 border-indigo-900/10 rounded-3xl p-6 bg-white shadow-sm overflow-hidden" style={{ borderColor: theme.accent + '20' }}>
-                          <div className="flex items-center justify-between mb-6 border-b pb-4">
-                            <div className="meeting-badge !m-0" style={{ backgroundColor: theme.accent }}>PERTEMUAN KE-{idx + 1}</div>
-                            <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: theme.accent }}>Deep Learning Session</div>
-                          </div>
-                          
-                          <table className="table-spreadsheet !m-0" style={{ borderColor: theme.accent }}>
-                            <tbody>
-                              <tr style={{ backgroundColor: theme.header }}>
-                                <td colSpan={2} className="text-center font-bold uppercase py-4" style={{ color: theme.text }}>
-                                  A. KEGIATAN AWAL ({meeting.opening.duration})
-                                </td>
-                              </tr>
-                              <tr>
-                                <td colSpan={2} className="p-8 leading-relaxed whitespace-pre-line text-justify">
-                                  {meeting.opening.steps}
-                                </td>
-                              </tr>
-
-                              <tr style={{ backgroundColor: theme.header }}>
-                                <td colSpan={2} className="text-center font-bold uppercase py-4 border-t-2" style={{ borderColor: theme.accent, color: theme.text }}>
-                                  B. KEGIATAN INTI ({meeting.understand.duration} + {meeting.apply.duration} + {meeting.reflect.duration})
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="col-key italic" style={{ width: '150px', backgroundColor: theme.header + '80', color: theme.text }}>1. Understand</td>
-                                <td className="p-6 whitespace-pre-line text-justify leading-relaxed">{meeting.understand.steps}</td>
-                              </tr>
-                              <tr>
-                                <td className="col-key italic" style={{ backgroundColor: theme.header + '80', color: theme.text }}>2. Apply</td>
-                                <td className="p-6 whitespace-pre-line text-justify leading-relaxed">{meeting.apply.steps}</td>
-                              </tr>
-                              <tr>
-                                <td className="col-key italic" style={{ backgroundColor: theme.header + '80', color: theme.text }}>3. Reflect</td>
-                                <td className="p-6 whitespace-pre-line text-justify leading-relaxed">{meeting.reflect.steps}</td>
-                              </tr>
-
-                              <tr style={{ backgroundColor: theme.header }}>
-                                <td colSpan={2} className="text-center font-bold uppercase py-4 border-t-2" style={{ borderColor: theme.accent, color: theme.text }}>
-                                  C. KEGIATAN AKHIR ({meeting.closing.duration})
-                                </td>
-                              </tr>
-                              <tr>
-                                <td colSpan={2} className="p-8 leading-relaxed whitespace-pre-line text-justify">
-                                  {meeting.closing.steps}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      );
-                    })}
-
-                    <div className="page-break"></div>
-                    <div className="bg-[#fce4ec] border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6 mt-12">4. RINGKASAN MATERI POKOK</div>
-                    <table className="table-spreadsheet">
-                      <tbody>
-                        {state.generatedImageUrl && (
-                          <tr>
-                            <td className="p-4 text-center bg-white border-b-0">
-                               <img 
-                                 src={state.generatedImageUrl} 
-                                 alt="Visual Materi" 
-                                 style={{ 
-                                   maxHeight: '300px', 
-                                   maxWidth: '100%', 
-                                   objectFit: 'contain', 
-                                   borderRadius: '8px',
-                                   margin: '0 auto',
-                                   display: 'block'
-                                 }} 
-                               />
-                            </td>
-                          </tr>
-                        )}
-                        <tr>
-                          <td className="p-8 text-justify leading-relaxed whitespace-pre-line align-top">
-                            {renderFormattedText(state.generatedContent.summary)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <div className="bg-[#fce4ec] border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6 mt-10">5. ASESMEN PEMBELAJARAN</div>
-                    <table className="table-spreadsheet">
-                      <thead>
-                        <tr className="bg-slate-100 font-bold">
-                          <th className="text-center" style={{width: '20%'}}>Komponen</th>
-                          <th className="text-center" style={{width: '25%'}}>Teknik Penilaian</th>
-                          <th className="text-center" style={{width: '25%'}}>Instrumen Penilaian</th>
-                          <th className="text-center">Rubrik / Kriteria</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="font-bold text-center bg-slate-50">Awal (Diagnostik)</td>
-                          <td className="text-center">{state.generatedContent.assessments.initial.technique}</td>
-                          <td>{state.generatedContent.assessments.initial.instrument}</td>
-                          <td className="text-justify text-sm leading-relaxed">{state.generatedContent.assessments.initial.rubric}</td>
-                        </tr>
-                        <tr>
-                          <td className="font-bold text-center bg-slate-50">Proses (Formatif)</td>
-                          <td className="text-center">{state.generatedContent.assessments.process.technique}</td>
-                          <td>{state.generatedContent.assessments.process.instrument}</td>
-                          <td className="text-justify text-sm leading-relaxed">{state.generatedContent.assessments.process.rubric}</td>
-                        </tr>
-                        <tr>
-                          <td className="font-bold text-center bg-slate-50">Akhir (Sumatif)</td>
-                          <td className="text-center">{state.generatedContent.assessments.final.technique}</td>
-                          <td>{state.generatedContent.assessments.final.instrument}</td>
-                          <td className="text-justify text-sm leading-relaxed">{state.generatedContent.assessments.final.rubric}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <table className="table-signatures mt-12 mb-10">
-                      <tbody>
-                        <tr>
-                          <td>
-                            <p className="mb-2">Mengetahui,</p>
-                            <p className="font-bold mb-24 uppercase">Kepala Sekolah</p>
-                            <p className="font-bold underline text-lg">{state.formData.principalName}</p>
-                            <p className="text-sm">NIP. {state.formData.principalNip}</p>
-                          </td>
-                          <td>
-                            <p className="mb-2">Lubuak Tarok, .................... 2026</p>
-                            <p className="font-bold mb-24 uppercase">Guru Kelas</p>
-                            <p className="font-bold underline text-lg">{state.formData.teacherName}</p>
-                            <p className="text-sm">NIP. {state.formData.teacherNip}</p>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <div className="page-break"></div>
-                    <div className="bg-[#fce4ec] border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6 mt-10">6. SOAL FORMATIF HOTS (20 SOAL)</div>
-                    <table className="table-spreadsheet">
-                      <tbody>{state.generatedContent.formativeQuestions.map((q, qIdx) => (
-                        <tr key={qIdx}>
-                          <td className="text-center font-bold bg-slate-50" style={{width: '40px', verticalAlign: 'middle'}}>{qIdx + 1}</td>
-                          <td className="p-6">
-                            <p className="font-bold mb-4 leading-relaxed text-justify">{q.question}</p>
-                            <table style={{width: '100%', border: 'none !important'}}>
-                              <tbody>
-                                <tr><td style={{border: 'none !important', padding: '2pt 0 !important', width: '25px'}}>A.</td><td style={{border: 'none !important', padding: '2pt 0 !important'}}>{q.options.a}</td></tr>
-                                <tr><td style={{border: 'none !important', padding: '2pt 0 !important'}}>B.</td><td style={{border: 'none !important', padding: '2pt 0 !important'}}>{q.options.b}</td></tr>
-                                <tr><td style={{border: 'none !important', padding: '2pt 0 !important'}}>C.</td><td style={{border: 'none !important', padding: '2pt 0 !important'}}>{q.options.c}</td></tr>
-                                <tr><td style={{border: 'none !important', padding: '2pt 0 !important'}}>D.</td><td style={{border: 'none !important', padding: '2pt 0 !important'}}>{q.options.d}</td></tr>
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      ))}</tbody>
-                    </table>
-
-                    <div className="mt-12 bg-indigo-900 text-white font-bold uppercase p-3 text-center border-[1.5pt] border-black">7. KUNCI JAWABAN</div>
-                    <table className="table-spreadsheet !mt-0">
-                      <tbody>
-                        {Array.from({ length: 2 }).map((_, rowIdx) => (
-                          <tr key={rowIdx}>
-                            {state.generatedContent?.formativeQuestions.slice(rowIdx * 10, (rowIdx + 1) * 10).map((q, qIdx) => (
-                              <td key={qIdx} className="text-center p-4 border border-black">
-                                <div className="text-[10px] text-slate-500 font-bold mb-1">{rowIdx * 10 + qIdx + 1}</div>
-                                <div className="text-lg font-black">{q.answer.toUpperCase()}</div>
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              <div className="a4-preview-wrapper shadow-2xl rounded-[3rem] p-12 bg-slate-300/50">
+                <div id="rpm-page-container" className="a4-page-container">
+                  <RPMDocument 
+                    id="rpm-document-content"
+                    entry={{
+                      id: 'current',
+                      timestamp: new Date().toLocaleString(),
+                      formData: state.formData,
+                      generatedContent: state.generatedContent,
+                      generatedImageUrl: state.generatedImageUrl
+                    }} 
+                    themeIndex={selectedThemeIndex !== null ? selectedThemeIndex : undefined}
+                  />
                 </div>
               </div>
             </div>
@@ -1255,6 +1721,31 @@ export default function App() {
           )}
         </section>
       </main>
+      {/* BATCH EXPORT CONTAINER (HIDDEN) */}
+      <div id="batch-export-container" className="fixed -left-[10000px] top-0 w-[210mm] bg-white">
+         {library.filter(e => selectedLibraryIds.includes(e.id)).map((entry, idx) => (
+           <div key={entry.id} className={idx > 0 ? "page-break" : ""}>
+              <RPMDocument entry={entry} themeIndex={entry.themeIndex} />
+           </div>
+         ))}
+      </div>
+
+      {(state.isGenerating || isGeneratingExtra) && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-indigo-950/90 backdrop-blur-xl text-white p-10">
+          <div className="relative mb-10">
+            <div className="absolute inset-0 bg-indigo-500 blur-3xl opacity-20 animate-pulse"></div>
+            <Loader2 className="animate-spin text-indigo-400 relative z-10" size={100} strokeWidth={1.5} />
+          </div>
+          <h2 className="text-4xl font-black italic uppercase tracking-tighter mb-4 animate-bounce text-center">
+            {state.isGenerating ? "Membangun RPM..." : "Menyiapkan Administrasi..."}
+          </h2>
+          <p className="text-indigo-300 font-bold uppercase tracking-widest text-sm text-center max-w-md leading-relaxed">
+            {state.isGenerating 
+              ? "Kecerdasan Buatan sedang merancang pembelajaran mendalam yang bermakna untuk siswa Anda. Mohon tunggu sejenak."
+              : "Sedang menyusun dokumen administrasi guru (Prota/Promes/LKPD/Soal) secara otomatis. Harap bersabar."}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

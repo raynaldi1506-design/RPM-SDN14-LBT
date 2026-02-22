@@ -21,8 +21,8 @@
             width: 100%;
         }
 
-        /* Base styles for the F4 Document (210mm x 330mm) */
-        .f4-preview-wrapper {
+        /* Base styles for the A4 Document (210mm x 297mm) */
+        .a4-preview-wrapper {
             width: 100%;
             overflow-x: auto;
             background: #cbd5e1;
@@ -35,13 +35,13 @@
         }
         
         @media (min-width: 1024px) {
-            .f4-preview-wrapper {
+            .a4-preview-wrapper {
                 justify-content: center;
                 padding: 40px 20px;
             }
         }
 
-        .f4-page-container {
+        .a4-page-container {
             width: 210mm;
             flex-shrink: 0;
             background: white;
@@ -49,21 +49,36 @@
             margin: 0 auto;
         }
 
-        .f4-page {
+        .a4-page {
             width: 210mm;
-            min-height: 330mm;
-            padding: 15mm 10mm;
+            min-height: 297mm;
+            padding: 20mm;
             background: white;
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 11pt;
-            line-height: 1.5;
-            color: black !important;
+            font-family: 'Arial Narrow', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.0;
             box-sizing: border-box;
             position: relative;
+            margin: 0 auto;
         }
 
-        .f4-page * {
-            color: black !important;
+        @media screen {
+            .a4-page {
+                margin-top: 20px;
+                margin-bottom: 20px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            }
+        }
+
+        @media print {
+            .a4-page {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+        }
+
+        .a4-page * {
             box-sizing: border-box;
         }
 
@@ -71,10 +86,11 @@
         .table-spreadsheet {
             width: 100% !important;
             border-collapse: collapse !important;
-            table-layout: auto !important; /* Changed to auto for better responsiveness */
+            table-layout: auto !important;
             border: 1.5pt solid black !important;
             margin-bottom: 12pt;
             word-break: normal;
+            page-break-inside: avoid;
         }
 
         .table-spreadsheet td, .table-spreadsheet th {
@@ -85,8 +101,8 @@
             overflow-wrap: break-word !important;
             word-wrap: break-word !important;
             hyphens: auto;
-            font-size: 10.5pt !important;
-            line-height: 1.4;
+            font-size: 10pt !important;
+            line-height: 1.0 !important;
         }
 
         .table-signatures {
@@ -131,7 +147,7 @@
             text-align: center !important;
             text-transform: uppercase;
             padding: 12pt !important;
-            font-size: 11pt !important;
+            font-size: 10pt !important;
             border: 1.5pt solid black !important;
         }
 
@@ -143,8 +159,14 @@
             display: block;
         }
 
-        .page-break {
-            page-break-before: always;
+        .page-break { 
+            page-break-before: always !important;
+            break-before: page !important;
+            height: 0;
+            margin: 0;
+            border: none;
+            visibility: hidden;
+            display: block;
         }
 
         .meeting-badge {
@@ -229,9 +251,11 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-slate-100 text-slate-900 overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

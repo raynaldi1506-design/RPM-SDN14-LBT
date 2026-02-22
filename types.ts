@@ -51,14 +51,21 @@ export interface LKPDContent {
 }
 
 export interface GeneratedRPMContent {
-  students: string;
+  students: string | {
+    priorKnowledge: string;
+    interests: string;
+    needs: string;
+  };
   interdisciplinary: string;
   partnership: string;
   environment: string;
   digitalTools: string;
   summary: string;
   pedagogy: string;
-  dimensions: string;
+  dimensions: string | {
+    dimension: string;
+    elements: string;
+  }[];
   meetings: LearningStep[];
   assessments: {
     initial: AssessmentDetail;
@@ -67,6 +74,10 @@ export interface GeneratedRPMContent {
   };
   lkpd: string;
   formativeQuestions: FormativeQuestion[];
+  enrichment: string;
+  remedial: string;
+  reflectionTeacher: string;
+  reflectionStudent: string;
 }
 
 export interface ProtaEntry {
@@ -107,6 +118,7 @@ export interface LibraryEntry {
   formData: RPMFormData;
   generatedContent: GeneratedRPMContent;
   generatedImageUrl: string | null;
+  themeIndex?: number;
 }
 
 export interface RPMState {
