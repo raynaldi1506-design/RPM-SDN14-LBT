@@ -167,104 +167,115 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
 
         <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>INFORMASI UMUM</div>
         
-        <div className="mb-6">
-          <h3 className="font-bold text-lg mb-3">A. Identitas Modul</h3>
-          <table className="table-spreadsheet">
-            <tbody>
-              <tr><td className="col-key">Satuan Pendidikan</td><td className="font-bold uppercase">{formData.schoolName}</td></tr>
-              <tr><td className="col-key">Mata Pelajaran</td><td className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.subject}</td></tr>
-              {formData.chapter && (
-                <tr><td className="col-key">Bab / Unit</td><td className="font-bold uppercase">{formData.chapter} {formData.chapterTitle ? `: ${formData.chapterTitle}` : ''}</td></tr>
-              )}
-              <tr><td className="col-key">Kelas / Fase</td><td className="font-bold">{formData.grade} / Fase {formData.grade.includes('1') || formData.grade.includes('2') ? 'A' : formData.grade.includes('3') || formData.grade.includes('4') ? 'B' : 'C'}</td></tr>
-              <tr><td className="col-key">Alokasi Waktu</td><td className="font-bold">{formData.meetingCount} Pertemuan ({formData.duration})</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="font-bold text-lg mb-3">B. Identifikasi Murid</h3>
-          {typeof generatedContent.students === 'string' ? (
-            <div className="p-6 border-2 border-black rounded-2xl bg-slate-50 text-justify leading-none">
-              {generatedContent.students}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4">
-              <div className="p-4 border-2 border-black rounded-2xl bg-slate-50">
-                <div className="font-black text-[10px] uppercase tracking-widest mb-1 text-indigo-600">1. Pengetahuan Awal</div>
-                <p className="text-sm leading-tight text-justify">{generatedContent.students.priorKnowledge}</p>
-              </div>
-              <div className="p-4 border-2 border-black rounded-2xl bg-slate-50">
-                <div className="font-black text-[10px] uppercase tracking-widest mb-1 text-emerald-600">2. Minat Belajar</div>
-                <p className="text-sm leading-tight text-justify">{generatedContent.students.interests}</p>
-              </div>
-              <div className="p-4 border-2 border-black rounded-2xl bg-slate-50">
-                <div className="font-black text-[10px] uppercase tracking-widest mb-1 text-rose-600">3. Kebutuhan Belajar</div>
-                <p className="text-sm leading-tight text-justify">{generatedContent.students.needs}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mb-6">
-          <h3 className="font-bold text-lg mb-3">C. Materi Pelajaran</h3>
-          <table className="table-spreadsheet">
-            <tbody>
-              <tr style={{ backgroundColor: docTheme.header + '30' }}>
-                <td colSpan={2} className="p-4 font-bold text-center uppercase" style={{ color: docTheme.text }}>
-                  Materi Pokok: {formData.material}
-                </td>
-              </tr>
-              {generatedImageUrl && (
-                <tr>
-                  <td colSpan={2} className="p-4 text-center bg-white">
-                     <img 
-                       src={generatedImageUrl} 
-                       alt="Visual Materi" 
-                       style={{ 
-                         maxHeight: '200px', 
-                         maxWidth: '100%', 
-                         objectFit: 'contain', 
-                         borderRadius: '12px',
-                         margin: '0 auto',
-                         display: 'block',
-                         border: '1px solid #e2e8f0'
-                       }} 
-                     />
-                  </td>
-                </tr>
-              )}
-              <tr>
-                <td colSpan={2} className="p-6 text-justify leading-none whitespace-pre-line">
-                  {renderFormattedText(generatedContent.summary)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="font-bold text-lg mb-3">D. Dimensi Profil Lulusan</h3>
-          <div className="space-y-3">
-            {Array.isArray(generatedContent.dimensions) ? (
-              generatedContent.dimensions.map((dim, dIdx) => (
-                <div key={dIdx} className="p-4 border-2 border-black rounded-2xl bg-indigo-50">
-                  <div className="font-black text-xs uppercase tracking-wider text-indigo-900 mb-1">{dim.dimension}</div>
-                  <div className="text-sm leading-tight text-indigo-800 italic">{dim.elements}</div>
-                </div>
-              ))
-            ) : (
-              <div className="p-6 border-2 border-black rounded-2xl bg-indigo-50 font-bold text-indigo-900">
-                {generatedContent.dimensions}
-              </div>
+        <table className="table-spreadsheet mb-6">
+          <tbody>
+            {/* A. IDENTITAS MODUL */}
+            <tr style={{ backgroundColor: docTheme.header + '40' }}>
+              <td colSpan={2} className="p-3 font-bold text-center uppercase">A. Identitas Modul</td>
+            </tr>
+            <tr><td className="col-key">Satuan Pendidikan</td><td className="font-bold uppercase">{formData.schoolName}</td></tr>
+            <tr><td className="col-key">Mata Pelajaran</td><td className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.subject}</td></tr>
+            {formData.chapter && (
+              <tr><td className="col-key">Bab / Unit</td><td className="font-bold uppercase">{formData.chapter} {formData.chapterTitle ? `: ${formData.chapterTitle}` : ''}</td></tr>
             )}
-          </div>
-        </div>
+            <tr><td className="col-key">Kelas / Fase</td><td className="font-bold">{formData.grade} / Fase {formData.grade.includes('1') || formData.grade.includes('2') ? 'A' : formData.grade.includes('3') || formData.grade.includes('4') ? 'B' : 'C'}</td></tr>
+            <tr><td className="col-key">Alokasi Waktu</td><td className="font-bold">{formData.meetingCount} Pertemuan ({formData.duration})</td></tr>
+
+            {/* B. IDENTIFIKASI MURID */}
+            <tr style={{ backgroundColor: docTheme.header + '40' }}>
+              <td colSpan={2} className="p-3 font-bold text-center uppercase">B. Identifikasi Murid</td>
+            </tr>
+            {typeof generatedContent.students === 'string' ? (
+              <tr>
+                <td className="col-key">Karakteristik Murid</td>
+                <td className="text-justify leading-none">{generatedContent.students}</td>
+              </tr>
+            ) : (
+              <>
+                <tr>
+                  <td className="col-key">Pengetahuan Awal</td>
+                  <td className="text-justify leading-none">{generatedContent.students.priorKnowledge}</td>
+                </tr>
+                <tr>
+                  <td className="col-key">Minat Belajar</td>
+                  <td className="text-justify leading-none">{generatedContent.students.interests}</td>
+                </tr>
+                <tr>
+                  <td className="col-key">Kebutuhan Belajar</td>
+                  <td className="text-justify leading-none">{generatedContent.students.needs}</td>
+                </tr>
+              </>
+            )}
+          </tbody>
+        </table>
+
+        <table className="table-spreadsheet mb-6">
+          <tbody>
+            {/* C. MATERI PELAJARAN */}
+            <tr style={{ backgroundColor: docTheme.header + '40' }}>
+              <td colSpan={2} className="p-3 font-bold text-center uppercase">C. Materi Pelajaran</td>
+            </tr>
+            <tr>
+              <td className="col-key">Materi Pokok</td>
+              <td className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.material}</td>
+            </tr>
+            {generatedImageUrl && (
+              <tr>
+                <td className="col-key">Visualisasi</td>
+                <td className="p-4 text-center bg-white">
+                   <img 
+                     src={generatedImageUrl} 
+                     alt="Visual Materi" 
+                     style={{ 
+                       maxHeight: '180px', 
+                       maxWidth: '100%', 
+                       objectFit: 'contain', 
+                       borderRadius: '12px',
+                       margin: '0 auto',
+                       display: 'block',
+                       border: '1px solid #e2e8f0'
+                     }} 
+                   />
+                </td>
+              </tr>
+            )}
+            <tr>
+              <td className="col-key">Ringkasan Materi</td>
+              <td className="p-6 text-justify leading-none whitespace-pre-line">
+                {renderFormattedText(generatedContent.summary)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* PAGE 2: DESAIN PEMBELAJARAN */}
       <div className="a4-page leading-none">
-        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>E. DESAIN PEMBELAJARAN</div>
+        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>DESAIN PEMBELAJARAN</div>
+        
+        <table className="table-spreadsheet mb-6">
+          <tbody>
+            {/* D. DIMENSI PROFIL LULUSAN */}
+            <tr style={{ backgroundColor: docTheme.header + '40' }}>
+              <td colSpan={2} className="p-3 font-bold text-center uppercase">D. Dimensi Profil Lulusan</td>
+            </tr>
+            {Array.isArray(generatedContent.dimensions) ? (
+              generatedContent.dimensions.map((dim, dIdx) => (
+                <tr key={dIdx}>
+                  <td className="col-key">{dim.dimension}</td>
+                  <td className="text-sm leading-tight italic text-indigo-800">{dim.elements}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td className="col-key">Profil Pelajar Pancasila</td>
+                <td className="font-bold text-indigo-900">{generatedContent.dimensions}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <div className="font-bold uppercase mb-3 text-sm">E. Rincian Desain</div>
         <table className="table-spreadsheet">
           <tbody>
             <tr><td className="col-key">Capaian Pembelajaran</td><td className="text-justify leading-none">{formData.cp}</td></tr>
