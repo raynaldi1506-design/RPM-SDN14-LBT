@@ -275,33 +275,19 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
 
         <SpreadsheetTable>
           <SubSectionHeader title="C. Materi Pelajaran" backgroundColor={docTheme.header + '40'} />
-          <DataRow label="Materi Pokok" value={<span className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.material}</span>} />
-          {generatedImageUrl && (
-            <DataRow 
-              label="Visualisasi" 
-              value={
-                <img 
-                  src={generatedImageUrl} 
-                  alt="Visual Materi" 
-                  style={{ 
-                    maxHeight: '180px', 
-                    maxWidth: '100%', 
-                    objectFit: 'contain', 
-                    borderRadius: '12px',
-                    margin: '0 auto',
-                    display: 'block',
-                    border: '1px solid #e2e8f0'
-                  }} 
-                />
-              } 
-              valueClassName="p-4 text-center bg-white" 
-            />
-          )}
+          <tr style={{ backgroundColor: docTheme.header + '10' }}>
+            <td colSpan={2} className="p-2 font-bold text-center uppercase text-[10px] tracking-widest opacity-70">Materi Pokok</td>
+          </tr>
+          <tr>
+            <td colSpan={2} className="p-4 text-center">
+              <span className="font-black text-xl uppercase" style={{ color: docTheme.text }}>{formData.material}</span>
+            </td>
+          </tr>
           <tr style={{ backgroundColor: docTheme.header + '20' }}>
             <td colSpan={2} className="p-3 font-bold text-center uppercase">Ringkasan Materi</td>
           </tr>
           <tr>
-            <td colSpan={2} className="p-8 text-justify leading-relaxed whitespace-pre-line">
+            <td colSpan={2} className="p-10 text-justify leading-relaxed whitespace-pre-line text-lg">
               {renderFormattedText(generatedContent.summary)}
             </td>
           </tr>
@@ -332,10 +318,26 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
           )}
         </SpreadsheetTable>
 
-        <div className="font-bold uppercase mb-3 text-sm">E. Rincian Desain</div>
         <SpreadsheetTable className="!mb-0">
-          <DataRow label="Capaian Pembelajaran" value={formData.cp} valueClassName="text-justify leading-none" />
-          <DataRow label="Tujuan Pembelajaran" value={formData.tp} valueClassName="text-justify leading-none font-bold" />
+          <SubSectionHeader title="E. Desain Pembelajaran" backgroundColor={docTheme.header + '40'} />
+          <tr style={{ backgroundColor: docTheme.header + '10' }}>
+            <td colSpan={2} className="p-2 font-bold uppercase text-[10px] tracking-widest opacity-70">Capaian Pembelajaran</td>
+          </tr>
+          <tr>
+            <td colSpan={2} className="p-5 text-justify leading-relaxed text-sm">
+              {formData.cp}
+            </td>
+          </tr>
+          
+          <tr style={{ backgroundColor: docTheme.header + '10' }}>
+            <td colSpan={2} className="p-2 font-bold uppercase text-[10px] tracking-widest opacity-70">Tujuan Pembelajaran</td>
+          </tr>
+          <tr>
+            <td colSpan={2} className="p-5 text-justify leading-relaxed font-bold">
+              {formData.tp}
+            </td>
+          </tr>
+
           <DataRow 
             label="Praktik Pedagogis" 
             value={generatedContent.pedagogy} 
@@ -357,7 +359,7 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
         return (
           <div key={idx} className="a4-page leading-none">
             {idx === 0 && (
-              <SectionHeader title="F. PENGALAMAN BELAJAR (RINCIAN PER PERTEMUAN)" backgroundColor={docTheme.header} />
+              <SectionHeader title="F. Pengalaman Belajar (Rincian/pertemuan)" backgroundColor={docTheme.header} />
             )}
             
             <div className="mb-6 border-2 border-indigo-900/10 rounded-3xl p-6 bg-white shadow-sm overflow-hidden" style={{ borderColor: theme.accent + '20' }}>
@@ -416,7 +418,7 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
 
       {/* PAGE N: ASESMEN, PENGAYAAN, REMEDIAL */}
       <div className="a4-page leading-none">
-        <SectionHeader title="G. ASESMEN PEMBELAJARAN" backgroundColor={docTheme.header} />
+        <SectionHeader title="G. Asesmen" backgroundColor={docTheme.header} />
         <SpreadsheetTable
           thead={
             <tr className="bg-slate-100 font-bold">
@@ -455,10 +457,9 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
 
         <div className="mt-6"></div>
 
-        <SectionHeader title="I. REFLEKSI & PENGESAHAN" backgroundColor={docTheme.header} className="mt-10" />
+        <SectionHeader title="I. Refleksi diri peserta didik dan pendidik" backgroundColor={docTheme.header} className="mt-10" />
         
         <div className="mb-10">
-          <h3 className="font-bold text-lg mb-6">Refleksi diri peserta didik dan pendidik</h3>
           <SpreadsheetTable>
             <DataRow 
               label="Refleksi Pendidik" 
@@ -473,12 +474,15 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
           </SpreadsheetTable>
         </div>
 
-        <SignatureSection 
-          principalName={formData.principalName}
-          principalNip={formData.principalNip}
-          teacherName={formData.teacherName}
-          teacherNip={formData.teacherNip}
-        />
+        <div className="mt-10 border-t-2 border-black pt-6">
+          <h3 className="font-bold text-center uppercase mb-8">Identitas Tanda Tangan</h3>
+          <SignatureSection 
+            principalName={formData.principalName}
+            principalNip={formData.principalNip}
+            teacherName={formData.teacherName}
+            teacherNip={formData.teacherNip}
+          />
+        </div>
       </div>
     </div>
   );
@@ -1752,7 +1756,18 @@ export default function App() {
                       </div>
                     ) : (
                       <div className="space-y-6">
-                        <div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase block">Profil Pelajar Pancasila (Dimensi Lulusan)</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {Object.values(GraduateDimension).map(d => (
+                              <button key={d} type="button" onClick={() => toggleCheckbox('dimensions', d)} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left text-[9px] font-bold ${state.formData.dimensions.includes(d) ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-500 hover:bg-slate-50'}`}>
+                                {state.formData.dimensions.includes(d) ? <CheckSquare size={12} className="shrink-0" /> : <Square size={12} className="shrink-0" />} {d}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-6">
                           <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Capaian Pembelajaran (CP)</label>
                           <textarea name="cp" value={state.formData.cp} onChange={handleInputChange} className="w-full p-4 border-2 border-slate-200 rounded-2xl text-xs h-24 bg-slate-50 resize-none focus:border-indigo-500 outline-none"></textarea>
                         </div>
@@ -1767,17 +1782,6 @@ export default function App() {
                             {Object.values(PedagogicalPractice).map(p => (
                               <button key={p} type="button" onClick={() => toggleCheckbox('pedagogy', p)} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left text-[10px] font-bold ${state.formData.pedagogy.includes(p) ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-500 hover:bg-slate-50'}`}>
                                 {state.formData.pedagogy.includes(p) ? <CheckSquare size={14} className="shrink-0" /> : <Square size={14} className="shrink-0" />} {p}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase block">Profil Pelajar Pancasila</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {Object.values(GraduateDimension).map(d => (
-                              <button key={d} type="button" onClick={() => toggleCheckbox('dimensions', d)} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left text-[9px] font-bold ${state.formData.dimensions.includes(d) ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-500 hover:bg-slate-50'}`}>
-                                {state.formData.dimensions.includes(d) ? <CheckSquare size={12} className="shrink-0" /> : <Square size={12} className="shrink-0" />} {d}
                               </button>
                             ))}
                           </div>
