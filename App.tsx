@@ -32,7 +32,6 @@ import {
   Sparkles,
   Download, 
   CheckCircle2,
-  School,
   UserCircle,
   Layout,
   FileDown,
@@ -130,6 +129,84 @@ const INITIAL_FORM: RPMFormData = {
 
 declare const html2pdf: any;
 
+// --- REUSABLE UI COMPONENTS FOR RPM ---
+const SectionHeader = ({ title, backgroundColor, className = "" }: { title: string, backgroundColor: string, className?: string }) => (
+  <div className={`border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6 ${className}`} style={{ backgroundColor }}>
+    {title}
+  </div>
+);
+
+const SubSectionHeader = ({ title, backgroundColor }: { title: string, backgroundColor: string }) => (
+  <tr style={{ backgroundColor }}>
+    <td colSpan={2} className="p-3 font-bold text-center uppercase">{title}</td>
+  </tr>
+);
+
+const DataRow = ({ label, value, labelClassName = "col-key", valueClassName = "", valueStyle = {} }: { 
+  label: string, 
+  value: React.ReactNode, 
+  labelClassName?: string,
+  valueClassName?: string,
+  valueStyle?: React.CSSProperties,
+  key?: React.Key
+}) => (
+  <tr>
+    <td className={labelClassName}>{label}</td>
+    <td className={valueClassName} style={valueStyle}>{value}</td>
+  </tr>
+);
+
+const SpreadsheetTable = ({ children, thead, className = "mb-6", style = {} }: { 
+  children: React.ReactNode, 
+  thead?: React.ReactNode,
+  className?: string,
+  style?: React.CSSProperties
+}) => (
+  <table className={`table-spreadsheet ${className}`} style={style}>
+    {thead && <thead>{thead}</thead>}
+    <tbody>{children}</tbody>
+  </table>
+);
+
+const SignatureSection = ({ 
+  principalName, 
+  principalNip, 
+  teacherName, 
+  teacherNip,
+  location = "Lubuak Tarok",
+  date = ".................... 2026",
+  className = ""
+}: { 
+  principalName: string, 
+  principalNip: string, 
+  teacherName: string, 
+  teacherNip: string,
+  location?: string,
+  date?: string,
+  className?: string
+}) => (
+  <div className={`mt-20 ${className}`}>
+    <table className="table-signatures mt-6 mb-10">
+      <tbody>
+        <tr>
+          <td>
+            <p className="mb-2">Mengetahui,</p>
+            <p className="font-bold mb-24 uppercase">Kepala Sekolah</p>
+            <p className="font-bold underline text-lg">{principalName}</p>
+            <p className="text-sm">NIP. {principalNip}</p>
+          </td>
+          <td>
+            <p className="mb-2">{location}, {date}</p>
+            <p className="font-bold mb-24 uppercase">Guru Kelas</p>
+            <p className="font-bold underline text-lg">{teacherName}</p>
+            <p className="text-sm">NIP. {teacherNip}</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+);
+
 // --- REUSABLE RPM DOCUMENT COMPONENT ---
 const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeIndex?: number, id?: string }) => {
   const { formData, generatedContent, generatedImageUrl } = entry;
@@ -165,126 +242,103 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
           <p className="font-bold text-lg uppercase tracking-widest">Kurikulum Merdeka - Semester Genap 2026</p>
         </div>
 
-        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>INFORMASI UMUM</div>
+        <SectionHeader title="INFORMASI UMUM" backgroundColor={docTheme.header} />
         
-        <table className="table-spreadsheet mb-6">
-          <tbody>
-            {/* A. IDENTITAS MODUL */}
-            <tr style={{ backgroundColor: docTheme.header + '40' }}>
-              <td colSpan={2} className="p-3 font-bold text-center uppercase">A. Identitas Modul</td>
-            </tr>
-            <tr><td className="col-key">Satuan Pendidikan</td><td className="font-bold uppercase">{formData.schoolName}</td></tr>
-            <tr><td className="col-key">Mata Pelajaran</td><td className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.subject}</td></tr>
-            {formData.chapter && (
-              <tr><td className="col-key">Bab / Unit</td><td className="font-bold uppercase">{formData.chapter} {formData.chapterTitle ? `: ${formData.chapterTitle}` : ''}</td></tr>
-            )}
-            <tr><td className="col-key">Kelas / Fase</td><td className="font-bold">{formData.grade} / Fase {formData.grade.includes('1') || formData.grade.includes('2') ? 'A' : formData.grade.includes('3') || formData.grade.includes('4') ? 'B' : 'C'}</td></tr>
-            <tr><td className="col-key">Alokasi Waktu</td><td className="font-bold">{formData.meetingCount} Pertemuan ({formData.duration})</td></tr>
+        <SpreadsheetTable>
+          <SubSectionHeader title="A. Identitas Modul" backgroundColor={docTheme.header + '40'} />
+          <DataRow label="Satuan Pendidikan" value={<span className="font-bold uppercase">{formData.schoolName}</span>} />
+          <DataRow label="Mata Pelajaran" value={<span className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.subject}</span>} />
+          {formData.chapter && (
+            <DataRow label="Bab / Unit" value={<span className="font-bold uppercase">{formData.chapter} {formData.chapterTitle ? `: ${formData.chapterTitle}` : ''}</span>} />
+          )}
+          <DataRow label="Kelas / Fase" value={<span className="font-bold">{formData.grade} / Fase {formData.grade.includes('1') || formData.grade.includes('2') ? 'A' : formData.grade.includes('3') || formData.grade.includes('4') ? 'B' : 'C'}</span>} />
+          <DataRow label="Alokasi Waktu" value={<span className="font-bold">{formData.meetingCount} Pertemuan ({formData.duration})</span>} />
+        </SpreadsheetTable>
 
-            {/* B. IDENTIFIKASI MURID */}
-            <tr style={{ backgroundColor: docTheme.header + '40' }}>
-              <td colSpan={2} className="p-3 font-bold text-center uppercase">B. Identifikasi Murid</td>
-            </tr>
-            {typeof generatedContent.students === 'string' ? (
-              <tr>
-                <td className="col-key">Karakteristik Murid</td>
-                <td className="text-justify leading-none">{generatedContent.students}</td>
-              </tr>
-            ) : (
-              <>
-                <tr>
-                  <td className="col-key">Pengetahuan Awal</td>
-                  <td className="text-justify leading-none">{generatedContent.students.priorKnowledge}</td>
-                </tr>
-                <tr>
-                  <td className="col-key">Minat Belajar</td>
-                  <td className="text-justify leading-none">{generatedContent.students.interests}</td>
-                </tr>
-                <tr>
-                  <td className="col-key">Kebutuhan Belajar</td>
-                  <td className="text-justify leading-none">{generatedContent.students.needs}</td>
-                </tr>
-              </>
-            )}
-          </tbody>
-        </table>
+        <SpreadsheetTable>
+          <SubSectionHeader title="B. Identifikasi Murid" backgroundColor={docTheme.header + '40'} />
+          {typeof generatedContent.students === 'string' ? (
+            <DataRow label="Karakteristik Murid" value={generatedContent.students} valueClassName="text-justify leading-none" />
+          ) : (
+            <>
+              <DataRow label="Pengetahuan Awal" value={generatedContent.students.priorKnowledge} valueClassName="text-justify leading-none" />
+              <DataRow label="Minat Belajar" value={generatedContent.students.interests} valueClassName="text-justify leading-none" />
+              <DataRow label="Kebutuhan Belajar" value={generatedContent.students.needs} valueClassName="text-justify leading-none" />
+            </>
+          )}
+        </SpreadsheetTable>
 
-        <table className="table-spreadsheet mb-6">
-          <tbody>
-            {/* C. MATERI PELAJARAN */}
-            <tr style={{ backgroundColor: docTheme.header + '40' }}>
-              <td colSpan={2} className="p-3 font-bold text-center uppercase">C. Materi Pelajaran</td>
-            </tr>
-            <tr>
-              <td className="col-key">Materi Pokok</td>
-              <td className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.material}</td>
-            </tr>
-            {generatedImageUrl && (
-              <tr>
-                <td className="col-key">Visualisasi</td>
-                <td className="p-4 text-center bg-white">
-                   <img 
-                     src={generatedImageUrl} 
-                     alt="Visual Materi" 
-                     style={{ 
-                       maxHeight: '180px', 
-                       maxWidth: '100%', 
-                       objectFit: 'contain', 
-                       borderRadius: '12px',
-                       margin: '0 auto',
-                       display: 'block',
-                       border: '1px solid #e2e8f0'
-                     }} 
-                   />
-                </td>
-              </tr>
-            )}
-            <tr>
-              <td className="col-key">Ringkasan Materi</td>
-              <td className="p-6 text-justify leading-none whitespace-pre-line">
-                {renderFormattedText(generatedContent.summary)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="h-[30pt]"></div>
+
+        <SpreadsheetTable>
+          <SubSectionHeader title="C. Materi Pelajaran" backgroundColor={docTheme.header + '40'} />
+          <DataRow label="Materi Pokok" value={<span className="font-bold uppercase" style={{ color: docTheme.text }}>{formData.material}</span>} />
+          {generatedImageUrl && (
+            <DataRow 
+              label="Visualisasi" 
+              value={
+                <img 
+                  src={generatedImageUrl} 
+                  alt="Visual Materi" 
+                  style={{ 
+                    maxHeight: '180px', 
+                    maxWidth: '100%', 
+                    objectFit: 'contain', 
+                    borderRadius: '12px',
+                    margin: '0 auto',
+                    display: 'block',
+                    border: '1px solid #e2e8f0'
+                  }} 
+                />
+              } 
+              valueClassName="p-4 text-center bg-white" 
+            />
+          )}
+          <DataRow 
+            label="Ringkasan Materi" 
+            value={renderFormattedText(generatedContent.summary)} 
+            valueClassName="p-6 text-justify leading-none whitespace-pre-line" 
+          />
+        </SpreadsheetTable>
       </div>
 
       {/* PAGE 2: DESAIN PEMBELAJARAN */}
       <div className="a4-page leading-none">
-        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>DESAIN PEMBELAJARAN</div>
+        <SectionHeader title="DESAIN PEMBELAJARAN" backgroundColor={docTheme.header} />
         
-        <table className="table-spreadsheet mb-6">
-          <tbody>
-            {/* D. DIMENSI PROFIL LULUSAN */}
-            <tr style={{ backgroundColor: docTheme.header + '40' }}>
-              <td colSpan={2} className="p-3 font-bold text-center uppercase">D. Dimensi Profil Lulusan</td>
-            </tr>
-            {Array.isArray(generatedContent.dimensions) ? (
-              generatedContent.dimensions.map((dim, dIdx) => (
-                <tr key={dIdx}>
-                  <td className="col-key">{dim.dimension}</td>
-                  <td className="text-sm leading-tight italic text-indigo-800">{dim.elements}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td className="col-key">Profil Pelajar Pancasila</td>
-                <td className="font-bold text-indigo-900">{generatedContent.dimensions}</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <SpreadsheetTable>
+          <SubSectionHeader title="D. Dimensi Profil Lulusan" backgroundColor={docTheme.header + '40'} />
+          {Array.isArray(generatedContent.dimensions) ? (
+            generatedContent.dimensions.map((dim, dIdx) => (
+              <DataRow 
+                key={dIdx} 
+                label={dim.dimension} 
+                value={dim.elements} 
+                valueClassName="text-sm leading-tight italic text-indigo-800" 
+              />
+            ))
+          ) : (
+            <DataRow 
+              label="Profil Pelajar Pancasila" 
+              value={generatedContent.dimensions} 
+              valueClassName="font-bold text-indigo-900" 
+            />
+          )}
+        </SpreadsheetTable>
 
         <div className="font-bold uppercase mb-3 text-sm">E. Rincian Desain</div>
-        <table className="table-spreadsheet">
-          <tbody>
-            <tr><td className="col-key">Capaian Pembelajaran</td><td className="text-justify leading-none">{formData.cp}</td></tr>
-            <tr><td className="col-key">Tujuan Pembelajaran</td><td className="text-justify leading-none font-bold">{formData.tp}</td></tr>
-            <tr><td className="col-key">Praktik Pedagogis</td><td className="font-bold italic" style={{ color: docTheme.accent }}>{generatedContent.pedagogy}</td></tr>
-            <tr><td className="col-key">Lintas Disiplin Ilmu</td><td className="text-justify leading-none">{generatedContent.interdisciplinary}</td></tr>
-            <tr><td className="col-key">Pemanfaatan Digital</td><td className="text-justify leading-none">{generatedContent.digitalTools}</td></tr>
-          </tbody>
-        </table>
+        <SpreadsheetTable className="!mb-0">
+          <DataRow label="Capaian Pembelajaran" value={formData.cp} valueClassName="text-justify leading-none" />
+          <DataRow label="Tujuan Pembelajaran" value={formData.tp} valueClassName="text-justify leading-none font-bold" />
+          <DataRow 
+            label="Praktik Pedagogis" 
+            value={generatedContent.pedagogy} 
+            valueClassName="font-bold italic" 
+            valueStyle={{ color: docTheme.accent }} 
+          />
+          <DataRow label="Lintas Disiplin Ilmu" value={generatedContent.interdisciplinary} valueClassName="text-justify leading-none" />
+          <DataRow label="Pemanfaatan Digital" value={generatedContent.digitalTools} valueClassName="text-justify leading-none" />
+        </SpreadsheetTable>
         
         <div className="mt-10 text-center p-10 border-2 border-dashed border-slate-200 rounded-3xl">
           <p className="text-slate-400 italic text-sm">Halaman ini berisi ringkasan desain instruksional. Rincian pertemuan dimulai pada halaman berikutnya.</p>
@@ -297,7 +351,7 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
         return (
           <div key={idx} className="a4-page leading-none">
             {idx === 0 && (
-              <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>F. PENGALAMAN BELAJAR (RINCIAN PER PERTEMUAN)</div>
+              <SectionHeader title="F. PENGALAMAN BELAJAR (RINCIAN PER PERTEMUAN)" backgroundColor={docTheme.header} />
             )}
             
             <div className="mb-6 border-2 border-indigo-900/10 rounded-3xl p-6 bg-white shadow-sm overflow-hidden" style={{ borderColor: theme.accent + '20' }}>
@@ -356,139 +410,84 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
 
       {/* PAGE N: ASESMEN, PENGAYAAN, REMEDIAL */}
       <div className="a4-page leading-none">
-        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>G. ASESMEN PEMBELAJARAN</div>
-        <table className="table-spreadsheet">
-          <thead>
+        <SectionHeader title="G. ASESMEN PEMBELAJARAN" backgroundColor={docTheme.header} />
+        <SpreadsheetTable
+          thead={
             <tr className="bg-slate-100 font-bold">
               <th className="text-center" style={{width: '20%'}}>Komponen</th>
               <th className="text-center" style={{width: '25%'}}>Teknik Penilaian</th>
               <th className="text-center" style={{width: '25%'}}>Instrumen Penilaian</th>
               <th className="text-center">Rubrik / Kriteria</th>
             </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="font-bold text-center bg-slate-50">Awal (Diagnostik)</td>
-              <td className="text-center">{generatedContent.assessments.initial.technique}</td>
-              <td>{generatedContent.assessments.initial.instrument}</td>
-              <td className="text-justify text-sm leading-none">{generatedContent.assessments.initial.rubric}</td>
-            </tr>
-            <tr>
-              <td className="font-bold text-center bg-slate-50">Proses (Formatif)</td>
-              <td className="text-center">{generatedContent.assessments.process.technique}</td>
-              <td>{generatedContent.assessments.process.instrument}</td>
-              <td className="text-justify text-sm leading-none">{generatedContent.assessments.process.rubric}</td>
-            </tr>
-            <tr>
-              <td className="font-bold text-center bg-slate-50">Akhir (Sumatif)</td>
-              <td className="text-center">{generatedContent.assessments.final.technique}</td>
-              <td>{generatedContent.assessments.final.instrument}</td>
-              <td className="text-justify text-sm leading-none">{generatedContent.assessments.final.rubric}</td>
-            </tr>
-          </tbody>
-        </table>
+          }
+        >
+          <DataRow 
+            label="Awal (Diagnostik)" 
+            value={generatedContent.assessments.initial.technique} 
+            labelClassName="font-bold text-center bg-slate-50" 
+            valueClassName="text-center" 
+          />
+          <tr>
+            <td className="hidden"></td>
+            <td>{generatedContent.assessments.initial.instrument}</td>
+            <td className="text-justify text-sm leading-none">{generatedContent.assessments.initial.rubric}</td>
+          </tr>
+          <DataRow 
+            label="Proses (Formatif)" 
+            value={generatedContent.assessments.process.technique} 
+            labelClassName="font-bold text-center bg-slate-50" 
+            valueClassName="text-center" 
+          />
+          <tr>
+            <td className="hidden"></td>
+            <td>{generatedContent.assessments.process.instrument}</td>
+            <td className="text-justify text-sm leading-none">{generatedContent.assessments.process.rubric}</td>
+          </tr>
+          <DataRow 
+            label="Akhir (Sumatif)" 
+            value={generatedContent.assessments.final.technique} 
+            labelClassName="font-bold text-center bg-slate-50" 
+            valueClassName="text-center" 
+          />
+          <tr>
+            <td className="hidden"></td>
+            <td>{generatedContent.assessments.final.instrument}</td>
+            <td className="text-justify text-sm leading-none">{generatedContent.assessments.final.rubric}</td>
+          </tr>
+        </SpreadsheetTable>
 
-        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6 mt-10" style={{ backgroundColor: docTheme.header }}>H. PENGAYAAN DAN REMEDIAL</div>
-        <table className="table-spreadsheet">
-          <tbody>
-            <tr>
-              <td className="col-key">Pengayaan</td>
-              <td className="p-6 text-justify leading-none">{generatedContent.enrichment}</td>
-            </tr>
-            <tr>
-              <td className="col-key">Remedial</td>
-              <td className="p-6 text-justify leading-none">{generatedContent.remedial}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <SectionHeader title="H. PENGAYAAN DAN REMEDIAL" backgroundColor={docTheme.header} className="mt-10" />
+        <SpreadsheetTable>
+          <DataRow label="Pengayaan" value={generatedContent.enrichment} valueClassName="p-6 text-justify leading-none" />
+          <DataRow label="Remedial" value={generatedContent.remedial} valueClassName="p-6 text-justify leading-none" />
+        </SpreadsheetTable>
 
-      {/* PAGE N+1: REFLEKSI & TANDA TANGAN */}
-      <div className="a4-page leading-none">
-        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-6" style={{ backgroundColor: docTheme.header }}>I. REFLEKSI & PENGESAHAN</div>
+        <div className="mt-6"></div>
+
+        <SectionHeader title="I. REFLEKSI & PENGESAHAN" backgroundColor={docTheme.header} className="mt-10" />
         
         <div className="mb-10">
           <h3 className="font-bold text-lg mb-6">Refleksi diri peserta didik dan pendidik</h3>
-          <table className="table-spreadsheet">
-            <tbody>
-              <tr>
-                <td className="col-key">Refleksi Pendidik</td>
-                <td className="p-6 text-justify leading-none whitespace-pre-line italic">{generatedContent.reflectionTeacher}</td>
-              </tr>
-              <tr>
-                <td className="col-key">Refleksi Peserta Didik</td>
-                <td className="p-6 text-justify leading-none whitespace-pre-line italic">{generatedContent.reflectionStudent}</td>
-              </tr>
-            </tbody>
-          </table>
+          <SpreadsheetTable>
+            <DataRow 
+              label="Refleksi Pendidik" 
+              value={generatedContent.reflectionTeacher} 
+              valueClassName="p-6 text-justify leading-none whitespace-pre-line italic" 
+            />
+            <DataRow 
+              label="Refleksi Peserta Didik" 
+              value={generatedContent.reflectionStudent} 
+              valueClassName="p-6 text-justify leading-none whitespace-pre-line italic" 
+            />
+          </SpreadsheetTable>
         </div>
 
-        <div className="mt-20">
-          <table className="table-signatures mt-6 mb-10">
-            <tbody>
-              <tr>
-                <td>
-                  <p className="mb-2">Mengetahui,</p>
-                  <p className="font-bold mb-24 uppercase">Kepala Sekolah</p>
-                  <p className="font-bold underline text-lg">{formData.principalName}</p>
-                  <p className="text-sm">NIP. {formData.principalNip}</p>
-                </td>
-                <td>
-                  <p className="mb-2">Lubuak Tarok, .................... 2026</p>
-                  <p className="font-bold mb-24 uppercase">Guru Kelas</p>
-                  <p className="font-bold underline text-lg">{formData.teacherName}</p>
-                  <p className="text-sm">NIP. {formData.teacherNip}</p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* PAGE N+2: LAMPIRAN */}
-      <div className="a4-page leading-none">
-        <div className="border-[1.5pt] border-black text-center font-bold uppercase p-3 mb-8" style={{ backgroundColor: docTheme.header }}>LAMPIRAN: INSTRUMEN PENILAIAN (SOAL HOTS & KUNCI JAWABAN)</div>
-        
-        <table className="table-spreadsheet">
-          <thead>
-            <tr style={{ backgroundColor: docTheme.header }}>
-              <th className="text-center" style={{ width: '50px' }}>No</th>
-              <th className="text-center">Butir Soal (HOTS) & Pilihan Jawaban</th>
-              <th className="text-center" style={{ width: '80px' }}>Kunci</th>
-            </tr>
-          </thead>
-          <tbody>
-            {generatedContent.formativeQuestions.map((q, qIdx) => (
-              <tr key={qIdx}>
-                <td className="text-center font-bold">{qIdx + 1}</td>
-                <td className="p-4">
-                  <p className="font-bold mb-3 text-justify">{q.question}</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                    {(['a', 'b', 'c', 'd'] as const).map((opt) => (
-                      <div key={opt} className="flex items-start gap-2">
-                        <span className="font-bold uppercase shrink-0">{opt}.</span>
-                        <span>{q.options[opt]}</span>
-                      </div>
-                    ))}
-                  </div>
-                </td>
-                <td className="text-center align-middle">
-                  <div className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center font-black mx-auto bg-slate-50">
-                    {q.answer.toUpperCase()}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="mt-12 pt-8 border-t-2 border-dashed border-slate-200 text-center">
-          <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-100 rounded-full mb-4">
-             <School size={14} className="text-slate-400" />
-             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">SDN 14 Lubuak Tarok • Sijunjung</span>
-          </div>
-          <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">Dokumen ini dihasilkan secara otomatis oleh Sistem Kecerdasan Buatan RPM 2026</p>
-        </div>
+        <SignatureSection 
+          principalName={formData.principalName}
+          principalNip={formData.principalNip}
+          teacherName={formData.teacherName}
+          teacherNip={formData.teacherNip}
+        />
       </div>
     </div>
   );
@@ -915,7 +914,7 @@ export default function App() {
             }
             @page WordSection1 {
               size: 210mm 297mm;
-              margin: 20mm;
+              margin: 10mm;
               mso-header-margin: 35.4pt;
               mso-footer-margin: 35.4pt;
               mso-paper-source: 0;

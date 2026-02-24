@@ -480,7 +480,6 @@ export const generateRPMContent = async (formData: RPMFormData): Promise<Generat
     - "remedial": Strategi remedial untuk siswa yang belum tuntas.
     - "reflectionTeacher": Pertanyaan refleksi untuk guru.
     - "reflectionStudent": Pertanyaan refleksi untuk siswa.
-    - Bagian "FORMATIVEQUESTIONS" harus berisi 20 soal HOTS pilihan ganda unik.
     
     Output JSON.
   `;
@@ -575,28 +574,12 @@ export const generateRPMContent = async (formData: RPMFormData): Promise<Generat
             required: ["initial", "process", "final"]
           },
           lkpd: { type: Type.STRING },
-          formativeQuestions: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                question: { type: Type.STRING },
-                options: {
-                  type: Type.OBJECT,
-                  properties: { a: { type: Type.STRING }, b: { type: Type.STRING }, c: { type: Type.STRING }, d: { type: Type.STRING } },
-                  required: ["a", "b", "c", "d"]
-                },
-                answer: { type: Type.STRING }
-              },
-              required: ["question", "options", "answer"]
-            }
-          },
           enrichment: { type: Type.STRING },
           remedial: { type: Type.STRING },
           reflectionTeacher: { type: Type.STRING },
           reflectionStudent: { type: Type.STRING }
         },
-        required: ["students", "interdisciplinary", "partnership", "environment", "digitalTools", "summary", "pedagogy", "dimensions", "meetings", "assessments", "lkpd", "formativeQuestions", "enrichment", "remedial", "reflectionTeacher", "reflectionStudent"]
+        required: ["students", "interdisciplinary", "partnership", "environment", "digitalTools", "summary", "pedagogy", "dimensions", "meetings", "assessments", "lkpd", "enrichment", "remedial", "reflectionTeacher", "reflectionStudent"]
       }
     }
   });

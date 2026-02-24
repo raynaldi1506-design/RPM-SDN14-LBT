@@ -73,7 +73,6 @@ export interface GeneratedRPMContent {
     final: AssessmentDetail;
   };
   lkpd: string;
-  formativeQuestions: FormativeQuestion[];
   enrichment: string;
   remedial: string;
   reflectionTeacher: string;

@@ -52,14 +52,15 @@
         .a4-page {
             width: 210mm;
             min-height: 297mm;
-            padding: 20mm;
+            padding: 10mm;
             background: white;
             font-family: 'Arial Narrow', Arial, sans-serif;
             font-size: 10pt;
-            line-height: 1.0;
+            line-height: 1.15;
             box-sizing: border-box;
             position: relative;
             margin: 0 auto;
+            overflow: hidden;
         }
 
         @media screen {
@@ -86,23 +87,23 @@
         .table-spreadsheet {
             width: 100% !important;
             border-collapse: collapse !important;
-            table-layout: auto !important;
+            table-layout: fixed !important;
             border: 1.5pt solid black !important;
             margin-bottom: 12pt;
-            word-break: normal;
-            page-break-inside: avoid;
+            word-break: break-word;
+            page-break-inside: auto;
         }
 
         .table-spreadsheet td, .table-spreadsheet th {
             border: 1pt solid black !important;
-            padding: 8pt 10pt !important;
+            padding: 6pt 8pt !important;
             vertical-align: top !important;
             text-align: left;
             overflow-wrap: break-word !important;
             word-wrap: break-word !important;
             hyphens: auto;
             font-size: 10pt !important;
-            line-height: 1.0 !important;
+            line-height: 1.15 !important;
         }
 
         .table-signatures {
@@ -197,7 +198,7 @@
             main { display: block !important; margin: 0 !important; padding: 0 !important; }
             section { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             
-            .f4-preview-wrapper { 
+            .a4-preview-wrapper { 
                 padding: 0 !important; 
                 background: white !important; 
                 overflow: visible !important; 
@@ -206,13 +207,13 @@
                 box-shadow: none !important;
                 width: 210mm !important;
             }
-            .f4-page-container { 
+            .a4-page-container { 
                 box-shadow: none !important; 
                 margin: 0 !important; 
                 width: 210mm !important; 
                 display: block !important;
             }
-            .f4-page { 
+            .a4-page { 
                 padding: 10mm !important; 
                 width: 210mm !important; 
                 border: none !important; 
@@ -220,7 +221,7 @@
                 box-shadow: none !important;
             }
             @page { 
-                size: 210mm 330mm; 
+                size: 210mm 297mm; 
                 margin: 0; 
             }
         }
