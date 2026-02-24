@@ -475,7 +475,10 @@ export const generateRPMContent = async (formData: RPMFormData): Promise<Generat
        * Gunakan format Markdown untuk penekanan teks: **Teks Tebal** untuk kata kunci/poin penting dan *Teks Miring* untuk istilah asing atau penekanan halus.
     - Setiap pertemuan harus memiliki langkah-langkah yang berbeda dan progresif.
     - Format langkah-langkah dalam "steps" HARUS dalam bentuk daftar bernomor susun ke bawah.
-    - Bagian assessments (initial, process, final) HARUS rinci (Teknik, Instrumen, Rubrik).
+    - Bagian assessments (initial, process, final) HARUS SANGAT RINCI:
+       * "technique": Sebutkan teknik penilaian yang digunakan (misal: Observasi, Kinerja, Tes Tertulis, Portofolio).
+       * "instrument": Sebutkan instrumen spesifik (misal: Lembar Observasi, Rubrik Analitik, Soal Pilihan Ganda, Daftar Cek).
+       * "rubric": Berikan kriteria penilaian yang jelas atau rubrik singkat (misal: Skor 4 jika..., Skor 3 jika...).
     - "enrichment": Strategi pengayaan untuk siswa yang sudah tuntas.
     - "remedial": Strategi remedial untuk siswa yang belum tuntas.
     - "reflectionTeacher": Pertanyaan refleksi untuk guru.

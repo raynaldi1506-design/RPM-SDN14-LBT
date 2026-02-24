@@ -56,7 +56,10 @@ import {
   UserPlus,
   Clock,
   FolderOpen,
-  FileQuestion
+  FileQuestion,
+  X,
+  Edit3,
+  Settings
 } from 'lucide-react';
 
 const TEACHERS = [
@@ -294,11 +297,14 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
               valueClassName="p-4 text-center bg-white" 
             />
           )}
-          <DataRow 
-            label="Ringkasan Materi" 
-            value={renderFormattedText(generatedContent.summary)} 
-            valueClassName="p-6 text-justify leading-none whitespace-pre-line" 
-          />
+          <tr style={{ backgroundColor: docTheme.header + '20' }}>
+            <td colSpan={2} className="p-3 font-bold text-center uppercase">Ringkasan Materi</td>
+          </tr>
+          <tr>
+            <td colSpan={2} className="p-8 text-justify leading-relaxed whitespace-pre-line">
+              {renderFormattedText(generatedContent.summary)}
+            </td>
+          </tr>
         </SpreadsheetTable>
       </div>
 
@@ -414,45 +420,30 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
         <SpreadsheetTable
           thead={
             <tr className="bg-slate-100 font-bold">
-              <th className="text-center" style={{width: '20%'}}>Komponen</th>
-              <th className="text-center" style={{width: '25%'}}>Teknik Penilaian</th>
-              <th className="text-center" style={{width: '25%'}}>Instrumen Penilaian</th>
-              <th className="text-center">Rubrik / Kriteria</th>
+              <th className="text-center p-3 border border-black" style={{width: '20%'}}>Komponen</th>
+              <th className="text-center p-3 border border-black" style={{width: '25%'}}>Teknik Penilaian</th>
+              <th className="text-center p-3 border border-black" style={{width: '25%'}}>Instrumen Penilaian</th>
+              <th className="text-center p-3 border border-black">Rubrik / Kriteria</th>
             </tr>
           }
         >
-          <DataRow 
-            label="Awal (Diagnostik)" 
-            value={generatedContent.assessments.initial.technique} 
-            labelClassName="font-bold text-center bg-slate-50" 
-            valueClassName="text-center" 
-          />
           <tr>
-            <td className="hidden"></td>
-            <td>{generatedContent.assessments.initial.instrument}</td>
-            <td className="text-justify text-sm leading-none">{generatedContent.assessments.initial.rubric}</td>
+            <td className="font-bold text-center bg-slate-50 p-3 border border-black">Awal (Diagnostik)</td>
+            <td className="text-center p-3 border border-black">{generatedContent.assessments.initial.technique}</td>
+            <td className="text-center p-3 border border-black">{generatedContent.assessments.initial.instrument}</td>
+            <td className="text-justify text-sm leading-none p-3 border border-black">{generatedContent.assessments.initial.rubric}</td>
           </tr>
-          <DataRow 
-            label="Proses (Formatif)" 
-            value={generatedContent.assessments.process.technique} 
-            labelClassName="font-bold text-center bg-slate-50" 
-            valueClassName="text-center" 
-          />
           <tr>
-            <td className="hidden"></td>
-            <td>{generatedContent.assessments.process.instrument}</td>
-            <td className="text-justify text-sm leading-none">{generatedContent.assessments.process.rubric}</td>
+            <td className="font-bold text-center bg-slate-50 p-3 border border-black">Proses (Formatif)</td>
+            <td className="text-center p-3 border border-black">{generatedContent.assessments.process.technique}</td>
+            <td className="text-center p-3 border border-black">{generatedContent.assessments.process.instrument}</td>
+            <td className="text-justify text-sm leading-none p-3 border border-black">{generatedContent.assessments.process.rubric}</td>
           </tr>
-          <DataRow 
-            label="Akhir (Sumatif)" 
-            value={generatedContent.assessments.final.technique} 
-            labelClassName="font-bold text-center bg-slate-50" 
-            valueClassName="text-center" 
-          />
           <tr>
-            <td className="hidden"></td>
-            <td>{generatedContent.assessments.final.instrument}</td>
-            <td className="text-justify text-sm leading-none">{generatedContent.assessments.final.rubric}</td>
+            <td className="font-bold text-center bg-slate-50 p-3 border border-black">Akhir (Sumatif)</td>
+            <td className="text-center p-3 border border-black">{generatedContent.assessments.final.technique}</td>
+            <td className="text-center p-3 border border-black">{generatedContent.assessments.final.instrument}</td>
+            <td className="text-justify text-sm leading-none p-3 border border-black">{generatedContent.assessments.final.rubric}</td>
           </tr>
         </SpreadsheetTable>
 
@@ -493,6 +484,149 @@ const RPMDocument = ({ entry, themeIndex, id }: { entry: LibraryEntry, themeInde
   );
 };
 
+// --- HOTS CUSTOMIZATION MODAL ---
+const HOTSModal = ({ 
+  isOpen, 
+  onClose, 
+  questions, 
+  onSave 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  questions: FormativeQuestion[] | null; 
+  onSave: (newQuestions: FormativeQuestion[]) => void;
+}) => {
+  const [localQuestions, setLocalQuestions] = useState<FormativeQuestion[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLocalQuestions(questions || []);
+    }
+  }, [isOpen, questions]);
+
+  if (!isOpen) return null;
+
+  const handleAdd = () => {
+    setLocalQuestions([...localQuestions, {
+      question: "Pertanyaan baru...",
+      options: { a: "", b: "", c: "", d: "" },
+      answer: "a"
+    }]);
+  };
+
+  const handleRemove = (index: number) => {
+    setLocalQuestions(localQuestions.filter((_, i) => i !== index));
+  };
+
+  const handleChange = (index: number, field: keyof FormativeQuestion, value: any) => {
+    const updated = [...localQuestions];
+    if (field === 'options') {
+       updated[index] = { ...updated[index], options: { ...updated[index].options, ...value } };
+    } else {
+       updated[index] = { ...updated[index], [field]: value };
+    }
+    setLocalQuestions(updated);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-10">
+      <div className="bg-white w-full max-w-5xl h-full max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+        <div className="p-8 border-b flex items-center justify-between bg-slate-50">
+          <div>
+            <h2 className="text-2xl font-black italic uppercase text-slate-900 flex items-center gap-3">
+              <Settings className="text-indigo-600" /> Kustomisasi Bank Soal HOTS
+            </h2>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-1">Edit, Tambah, atau Hapus Soal Secara Manual</p>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-slate-200 rounded-2xl transition-all text-slate-400 hover:text-slate-900">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/30">
+          {localQuestions.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+               <FileQuestion size={64} className="mx-auto text-slate-300 mb-4" />
+               <p className="text-slate-500 font-bold">Belum ada soal. Klik tombol tambah untuk memulai.</p>
+            </div>
+          ) : (
+            localQuestions.map((q, idx) => (
+              <div key={idx} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 relative group transition-all hover:shadow-md">
+                <button 
+                  onClick={() => handleRemove(idx)}
+                  className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 size={20} />
+                </button>
+                
+                <div className="flex gap-6">
+                  <div className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shrink-0 shadow-lg shadow-indigo-200">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 space-y-6">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase block mb-2">Pertanyaan</label>
+                      <textarea 
+                        value={q.question}
+                        onChange={(e) => handleChange(idx, 'question', e.target.value)}
+                        className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-indigo-500 focus:ring-0 transition-all font-bold text-slate-800 resize-none"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {['a', 'b', 'c', 'd'].map((opt) => (
+                        <div key={opt}>
+                          <label className="text-[10px] font-black text-slate-400 uppercase block mb-2">Opsi {opt.toUpperCase()}</label>
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="radio"
+                              name={`answer-${idx}`}
+                              checked={q.answer === opt}
+                              onChange={() => handleChange(idx, 'answer', opt)}
+                              className="w-5 h-5 text-indigo-600 border-2 border-slate-200 focus:ring-indigo-500"
+                            />
+                            <input 
+                              type="text"
+                              value={q.options[opt as keyof typeof q.options]}
+                              onChange={(e) => handleChange(idx, 'options', { [opt]: e.target.value })}
+                              className={`flex-1 p-3 rounded-xl border-2 transition-all font-bold text-sm ${q.answer === opt ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-100'}`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+          
+          <button 
+            onClick={handleAdd}
+            className="w-full py-6 border-2 border-dashed border-indigo-200 rounded-3xl text-indigo-600 font-black flex items-center justify-center gap-3 hover:bg-indigo-50 hover:border-indigo-400 transition-all group"
+          >
+            <Plus size={24} className="group-hover:scale-110 transition-transform" /> TAMBAH SOAL BARU
+          </button>
+        </div>
+
+        <div className="p-8 border-t bg-white flex items-center justify-end gap-4">
+          <button onClick={onClose} className="px-8 py-4 text-slate-500 font-black text-sm uppercase hover:bg-slate-100 rounded-2xl transition-all">Batal</button>
+          <button 
+            onClick={() => {
+              onSave(localQuestions);
+              onClose();
+            }}
+            className="px-10 py-4 bg-indigo-700 text-white font-black text-sm uppercase rounded-2xl shadow-xl shadow-indigo-200 hover:bg-indigo-800 transition-all active:scale-[0.98]"
+          >
+            Simpan Perubahan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [state, setState] = useState<RPMState>({
     formData: INITIAL_FORM,
@@ -516,6 +650,7 @@ export default function App() {
   const [promesData, setPromesData] = useState<PromesEntry[] | null>(null);
   const [lkpdData, setLkpdData] = useState<LKPDContent | null>(null);
   const [questionsData, setQuestionsData] = useState<FormativeQuestion[] | null>(null);
+  const [isCustomizingHOTS, setIsCustomizingHOTS] = useState(false);
   const [isGeneratingExtra, setIsGeneratingExtra] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("topik");
   const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
@@ -1657,9 +1792,14 @@ export default function App() {
                 <button type="submit" disabled={state.isGenerating || !state.formData.material} className="w-full py-6 bg-indigo-700 text-white rounded-[2rem] font-black text-lg shadow-2xl hover:bg-indigo-800 disabled:bg-slate-300 transition-all active:scale-[0.98]">
                   {state.isGenerating ? <Loader2 className="animate-spin mx-auto" size={28} /> : "HASILKAN RPM LENGKAP"}
                 </button>
-                <button type="button" onClick={handleGenQuestions} disabled={state.isGenerating || isGeneratingExtra || !state.formData.material} className="w-full py-4 bg-teal-600 text-white rounded-[1.5rem] font-black text-xs shadow-xl hover:bg-teal-700 disabled:bg-slate-300 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
-                  {isGeneratingExtra ? <Loader2 className="animate-spin" size={18} /> : <><FileQuestion size={18}/> BUAT BANK SOAL (25 HOTS)</>}
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={handleGenQuestions} disabled={state.isGenerating || isGeneratingExtra || !state.formData.material} className="py-4 bg-teal-600 text-white rounded-[1.5rem] font-black text-[10px] shadow-xl hover:bg-teal-700 disabled:bg-slate-300 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
+                    {isGeneratingExtra ? <Loader2 className="animate-spin" size={18} /> : <><FileQuestion size={18}/> BUAT BANK SOAL (25 HOTS)</>}
+                  </button>
+                  <button type="button" onClick={() => setIsCustomizingHOTS(true)} disabled={state.isGenerating || isGeneratingExtra || !state.formData.material} className="py-4 bg-slate-800 text-white rounded-[1.5rem] font-black text-[10px] shadow-xl hover:bg-slate-900 disabled:bg-slate-300 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
+                    <Settings size={18}/> KUSTOMISASI SOAL
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1756,6 +1896,13 @@ export default function App() {
           </p>
         </div>
       )}
+
+      <HOTSModal 
+        isOpen={isCustomizingHOTS}
+        onClose={() => setIsCustomizingHOTS(false)}
+        questions={questionsData}
+        onSave={(newQuestions) => setQuestionsData(newQuestions)}
+      />
     </div>
   );
 }
